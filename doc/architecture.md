@@ -19,6 +19,7 @@ struct HitRecord {
     Vec3 point;
     Vec3 normal;
     const IMaterial *material;
+    bool frontFace;
 };
 
 struct ScatterResult {
