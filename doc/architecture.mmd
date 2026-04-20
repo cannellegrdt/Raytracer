@@ -1,0 +1,83 @@
+classDiagram
+    direction TB
+
+    class IPrimitive {
+        <<interface>>
+        +intersect(Ray) optional~HitRecord~
+    }
+    class IMaterial {
+        <<interface>>
+        +scatter(Ray, HitRecord) ScatterResult
+    }
+    class ILight {
+        <<interface>>
+        +getSample(Vec3, Vec3) LightSample
+    }
+    class ISceneLoader {
+        <<interface>>
+        +load(string, PrimitiveFactory) SceneContext
+    }
+
+    class Factory~T~ {
+        -creators_ unordered_map
+        +registerType(string, CreatorFunc)
+        +create(string) optional~Ptr~
+    }
+    class DLLoader~T~ {
+        -handle_ HandlePtr
+        +getCreate() create_t
+        +getDestroy() destroy_t
+    }
+    class PluginLoader {
+        -loadedPlugins_ DLLoader[]
+        +loadAll(string, PrimitiveFactory)
+    }
+    class LibconfigLoader {
+        +load(string, PrimitiveFactory) SceneContext
+    }
+
+    class Scene {
+        -primitives_ PrimitivePtr[]
+        -lights_ ILight[]
+        +addPrimitive(PrimitivePtr)
+        +addLight(ILight)
+    }
+    class Camera {
+        +generateRay(int x, int y) Ray
+    }
+    class SceneContext {
+        +scene Scene
+        +camera Camera
+    }
+    class PrimitiveBuilder {
+        +setType(string) self
+        +setMaterial(IMaterial) self
+        +setTranslation(Vec3) self
+        +setRotation(Vec3) self
+        +setScale(Vec3) self
+        +build() PrimitivePtr
+    }
+    class Renderer {
+        +render(SceneContext)
+    }
+    class HitRecord {
+        +t double
+        +point Vec3
+        +normal Vec3
+        +material IMaterial*
+    }
+
+    ISceneLoader <|.. LibconfigLoader : implements
+    PluginLoader *-- DLLoader~T~ : owns
+    PluginLoader --> Factory~T~ : populates
+    PrimitiveBuilder --> Factory~T~ : uses
+    LibconfigLoader --> Factory~T~ : uses
+    Scene o-- IPrimitive : PrimitivePtr[]
+    Scene o-- ILight : unique_ptr[]
+    SceneContext *-- Scene
+    SceneContext *-- Camera
+    ISceneLoader ..> SceneContext : produces
+    Renderer --> SceneContext : reads
+    HitRecord --> IMaterial : references
+    IPrimitive ..> HitRecord : returns
+    IMaterial ..> HitRecord : reads
