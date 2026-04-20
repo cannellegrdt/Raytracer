@@ -2,7 +2,7 @@
  * Project: Raytracer
  * File name: HitRecord.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: HitRecord struct.
+ * File description: Intersection result holding hit distance, point, normal, material pointer, and face orientation.
  */
 
 #ifndef HITRECORD_HPP_

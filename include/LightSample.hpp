@@ -2,7 +2,7 @@
  * Project: Raytracer
  * File name: LightSample.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: LightSample struct.
+ * File description: Light evaluation result holding direction toward the light, its color, and distance from the hit point.
  */
 
 #ifndef LIGHTSAMPLE_HPP_

@@ -1,0 +1,19 @@
+/*
+ * Project: Raytracer
+ * File name: Type.hpp
+ * Author: Cannelle Gourdet - lankley
+ * File description: Shared type aliases and helpers for primitive ownership (PrimitivePtr with custom deleter).
+ */
+
+#ifndef TYPE_HPP_
+    #define TYPE_HPP_
+    #include <memory>
+    #include <functional>
+    #include "IPrimitive.hpp"
+
+using PrimitivePtr = std::unique_ptr<IPrimitive, std::function<void(IPrimitive*)>>;
+
+template<typename T>
+void defaultDestroy(IPrimitive *p) { delete static_cast<T*>(p); }
+
+#endif /* TYPE_HPP_ */
