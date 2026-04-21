@@ -13,7 +13,7 @@ CXXFLAGS	+=	-fPIC
 LDFLAGS	:=	-lconfig++ -ldl
 
 NAME	:=	raytracer
-TEST_BIN	:=	unit_tests_bin
+TEST_BIN	:=	unit_tests
 
 SRC	:=	$(shell find src/ -name "*.cpp" ! -path "src/plugins/*" 2>/dev/null)
 OBJ	:=	$(SRC:.cpp=.o)
