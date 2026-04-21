@@ -11,8 +11,14 @@
     #include "Ray.hpp"
     #include "HitRecord.hpp"
 
+/// @brief Interface for material types.
+/// @details Defines how rays interact with surfaces (scatter, reflect, refract, absorb).
 class IMaterial {
 public:
+    /// @brief Computes the scattering of a ray hitting a surface.
+    /// @param ray Incoming ray.
+    /// @param hit Hit record with intersection details.
+    /// @return ScatterResult containing attenuation color and scattered ray (if any).
     virtual ScatterResult scatter(const Ray &ray, const HitRecord &hit) const = 0;
     virtual ~IMaterial() = default;
 };

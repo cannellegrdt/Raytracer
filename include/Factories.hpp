@@ -10,6 +10,7 @@
     #include "Factory.hpp"
     #include "ISceneLoader.hpp"
 
+/// @brief Factory for scene loaders.
 using LoaderFactory = Factory<ISceneLoader>;
 
 #endif /* FACTORIES_HPP_ */

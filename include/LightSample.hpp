@@ -9,10 +9,11 @@
     #define LIGHTSAMPLE_HPP_
     #include "Vec3.hpp"
 
+/// @brief Result of sampling a light at a point.
 struct LightSample {
-    Vec3 direction;
-    Vec3 color;
-    double distance;
+    Vec3 direction; ///< Direction from hit point toward the light.
+    Vec3 color;     ///< Color/intensity of the light.
+    double distance; ///< Distance from hit point to light source.
 };
 
 #endif /* LIGHTSAMPLE_HPP_ */

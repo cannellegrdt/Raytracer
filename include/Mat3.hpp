@@ -10,9 +10,13 @@
     #include <cmath>
     #include "Vec3.hpp"
 
+/// @brief 3x3 matrix for rotations and transformations.
 struct Mat3 {
-    double m[3][3] = {};
+    double m[3][3] = {}; ///< Matrix elements in row-major order.
 
+    /// @brief Matrix-vector multiplication.
+    /// @param v Vector to multiply.
+    /// @return Transformed vector.
     Vec3 operator*(const Vec3 &v) const {
         return Vec3(
             m[0][0]*v.x + m[0][1]*v.y + m[0][2]*v.z,
@@ -21,6 +25,9 @@ struct Mat3 {
         );
     }
 
+    /// @brief Matrix-matrix multiplication.
+    /// @param o Other matrix.
+    /// @return Result matrix.
     Mat3 operator*(const Mat3 &o) const {
         Mat3 r{};
         for (int i = 0; i < 3; i++)
@@ -30,6 +37,8 @@ struct Mat3 {
         return r;
     }
 
+    /// @brief Returns the transpose of this matrix.
+    /// @return Transposed matrix.
     Mat3 transpose() const {
         return Mat3{{
             {m[0][0], m[1][0], m[2][0]},
@@ -39,6 +48,9 @@ struct Mat3 {
     }
 };
 
+/// @brief Creates a rotation matrix around the X-axis.
+/// @param theta Rotation angle in radians.
+/// @return Rotation matrix.
 inline Mat3 rotateX(double theta) {
     double c = std::cos(theta);
     double s = std::sin(theta);
@@ -49,6 +61,9 @@ inline Mat3 rotateX(double theta) {
     }};
 }
 
+/// @brief Creates a rotation matrix around the Y-axis.
+/// @param theta Rotation angle in radians.
+/// @return Rotation matrix.
 inline Mat3 rotateY(double theta) {
     double c = std::cos(theta);
     double s = std::sin(theta);
@@ -59,6 +74,9 @@ inline Mat3 rotateY(double theta) {
     }};
 }
 
+/// @brief Creates a rotation matrix around the Z-axis.
+/// @param theta Rotation angle in radians.
+/// @return Rotation matrix.
 inline Mat3 rotateZ(double theta) {
     double c = std::cos(theta);
     double s = std::sin(theta);

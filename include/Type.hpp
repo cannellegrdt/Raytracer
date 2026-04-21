@@ -11,8 +11,13 @@
     #include <functional>
     #include "IPrimitive.hpp"
 
+/// @brief Unique pointer to IPrimitive with custom deleter.
+/// @details Used for polymorphic primitive ownership with proper cleanup.
 using PrimitivePtr = std::unique_ptr<IPrimitive, std::function<void(IPrimitive*)>>;
 
+/// @brief Default deleter for primitive types.
+/// @tparam T Concrete primitive type.
+/// @param p Pointer to delete.
 template<typename T>
 void defaultDestroy(IPrimitive *p) { delete static_cast<T*>(p); }
 

@@ -16,9 +16,18 @@
 
 class IMaterial;
 
+/// @brief Interface for geometric primitives.
+/// @details Implementations define how rays intersect with shapes (sphere, plane, etc.).
 class IPrimitive {
 public:
+    /// @brief Tests intersection between ray and primitive.
+    /// @param ray Ray to test against.
+    /// @return Optional HitRecord if ray intersects, empty otherwise.
     virtual std::optional<HitRecord> intersect(const Ray &ray) const = 0;
+
+    /// @brief Configures the primitive with parameters from scene file.
+    /// @param params Map of parameter names to values.
+    /// @param mat Pointer to material to apply.
     virtual void configure(const std::unordered_map<std::string, double> &params, const IMaterial *mat) = 0;
     virtual ~IPrimitive() = default;
 };

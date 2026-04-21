@@ -11,9 +11,10 @@
     #include "Vec3.hpp"
     #include "Ray.hpp"
 
+/// @brief Result of a material's scatter operation.
 struct ScatterResult {
-    Vec3 attenuation;
-    std::optional<Ray> scatteredRay;
+    Vec3 attenuation;                 ///< Color attenuation (how much light is reflected/transmitted).
+    std::optional<Ray> scatteredRay;  ///< New ray after scattering (empty if absorbed).
 };
 
 #endif /* SCATTERRESULT_HPP_ */

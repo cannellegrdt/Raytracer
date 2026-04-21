@@ -10,9 +10,10 @@
     #include "Scene.hpp"
     #include "Camera.hpp"
 
+/// @brief Complete render context containing scene and camera.
 struct SceneContext {
-    Scene scene;
-    Camera camera;
+    Scene scene;   ///< Scene with all primitives and lights.
+    Camera camera; ///< Camera for rendering.
 };
 
 #endif /* SCENECONTEXT_HPP_ */

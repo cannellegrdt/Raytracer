@@ -10,9 +10,22 @@
     #include "Vec3.hpp"
     #include "Ray.hpp"
 
+/// @brief Camera for raytracing.
+/// @details Generates rays from pixel coordinates for rendering.
 class Camera {
 public:
+    /// @brief Constructs a camera.
+    /// @param position Camera position in world space.
+    /// @param rotation Camera rotation ( Euler angles).
+    /// @param fov Field of view in degrees.
+    /// @param width Image width in pixels.
+    /// @param height Image height in pixels.
     Camera(Vec3 position, Vec3 rotation, double fov, int width, int height);
+
+    /// @brief Generates a ray for a pixel.
+    /// @param x Pixel x coordinate.
+    /// @param y Pixel y coordinate.
+    /// @return Ray from camera through the pixel.
     Ray generateRay(int x, int y) const;
 };
 
