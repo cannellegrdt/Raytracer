@@ -32,10 +32,10 @@ public:
         double discr = h * h - a * c;
         if (discr < 0.0) return std::nullopt;
 
-        double sqrt_discr = std::sqrt(discr);
-        double t = (-h - sqrt_discr) / a;
+        double sqrtDiscr = std::sqrt(discr);
+        double t = (-h - sqrtDiscr) / a;
         if (t < epsilon)
-            t = (-h + sqrt_discr) / a;
+            t = (-h + sqrtDiscr) / a;
         if (t < epsilon) return std::nullopt;
 
         Vec3 point = ray.at(t);
@@ -44,7 +44,7 @@ public:
         if (!frontFace)
             normal = -normal;
         
-        return HitRecord(t, point, normal, _material, frontFace);
+        return HitRecord{t, point, normal, _material, frontFace};
     };
 
 private:

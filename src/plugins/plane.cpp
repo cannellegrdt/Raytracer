@@ -35,7 +35,7 @@ public:
         Vec3 normal = _normal;
         if (!frontFace)
             normal = -normal;
-        return HitRecord(t, ray.at(t), normal, _material, frontFace);
+        return HitRecord{t, ray.at(t), normal, _material, frontFace};
     };
 
 private:
