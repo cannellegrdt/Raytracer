@@ -80,7 +80,6 @@ _run_coverage: LDFLAGS  := $(LDFLAGS) $(_COV_FLAGS)
 _run_coverage: $(LIB_OBJ) $(TEST_OBJ)
 	$(CXX) $(CXXFLAGS) -o $(TEST_BIN) $^ $(LDFLAGS) -lcriterion
 	./$(TEST_BIN)
-	gcov $(SRC)
 	lcov --capture --directory . --output-file coverage.info \
 		--ignore-errors mismatch \
 		--exclude '/usr/*' \

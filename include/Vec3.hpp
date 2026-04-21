@@ -8,6 +8,7 @@
 #ifndef VEC3_HPP_
     #define VEC3_HPP_
     #include <cmath>
+    constexpr double epsilon = 1e-12;
 
 struct Vec3 {
     double x, y, z;
@@ -124,7 +125,7 @@ inline double length(const Vec3 &v) {
 
 inline Vec3 normalize(const Vec3 &v) {
     double len = length(v);
-    if (len < 1e-12) return Vec3(0, 0, 0);
+    if (len < epsilon) return Vec3(0, 0, 0);
     return v / len;
 }
 
