@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Error: missing scene file. Use --help for usage.\n";
         return 84;
     }
-    if (argc != 2) {
+    if (argc > 2) {
         std::cerr << "Error: too many arguments. Expected exactly one scene file.\n";
         return 84;
     }

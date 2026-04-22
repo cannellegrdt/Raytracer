@@ -114,14 +114,15 @@ Test(primitivebuilder, multiple_decorators_stacked) {
     auto result = builder.build();
     cr_assert_not_null(result.get());
 
+    // TRS order: Translation is outermost (applied last in world space)
+    auto *translation = dynamic_cast<TranslationDecorator *>(result.get());
+    cr_assert_not_null(translation);
+
     auto *scale = dynamic_cast<ScaleDecorator *>(result.get());
-    cr_assert_not_null(scale);
+    cr_assert_not(scale);
 
     auto *rotation = dynamic_cast<RotationDecorator *>(result.get());
     cr_assert_not(rotation);
-
-    auto *translation = dynamic_cast<TranslationDecorator *>(result.get());
-    cr_assert_not(translation);
 }
 
 Test(primitivebuilder, reset_clears_state) {

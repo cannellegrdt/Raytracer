@@ -8,6 +8,7 @@
 #ifndef VEC3_HPP_
     #define VEC3_HPP_
     #include <cmath>
+    #include <cassert>
     constexpr double epsilon = 1e-12;
 
 /// @brief 3D vector with x, y, z components.
@@ -56,6 +57,7 @@ struct Vec3 {
     /// @param i Index (0=x, 1=y, 2=z).
     /// @return Reference to component.
     double& operator[](int i) {
+        assert(i >= 0 && i < 3);
         if (i == 0) return x;
         if (i == 1) return y;
         return z;
@@ -65,6 +67,7 @@ struct Vec3 {
     /// @param i Index (0=x, 1=y, 2=z).
     /// @return Const reference to component.
     const double& operator[](int i) const {
+        assert(i >= 0 && i < 3);
         if (i == 0) return x;
         if (i == 1) return y;
         return z;

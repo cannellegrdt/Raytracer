@@ -150,16 +150,17 @@ Test(transparency, transmitted_ray_keeps_original_direction) {
     cr_assert(vec3_near(result.scatteredRay->direction, ray.direction));
 }
 
-Test(transparency, transmitted_ray_origin_is_hit_point) {
+Test(transparency, transmitted_ray_origin_is_biased_inside_surface) {
     Transparency mat(Color{1, 1, 1});
-    
+
     HitRecord hit = makeHit({3, -2, 5}, {0, 1, 0});
     Ray ray{{3, 0, 6}, {0, 0, -1}};
-    
+
     ScatterResult result = mat.scatter(ray, hit);
-    
+
     cr_assert(result.scatteredRay.has_value());
-    cr_assert(vec3_near(result.scatteredRay->origin, hit.point));
+    Vec3 expected = hit.point - 1e-4 * hit.normal;
+    cr_assert(vec3_near(result.scatteredRay->origin, expected));
 }
 
 Test(transparency, returns_correct_attenuation) {

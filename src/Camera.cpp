@@ -6,12 +6,21 @@
  */
 
 #include <cmath>
+#include <stdexcept>
+#include <string>
 #include "Camera.hpp"
 #include "Mat3.hpp"
 
 Camera::Camera(Vec3 position, Vec3 rotation, double fov, int width, int height)
     : _position(position), _rotation(rotation), _fov(fov),
-      _width(width), _height(height) {}
+      _width(width), _height(height) {
+    if (width <= 0 || height <= 0)
+        throw std::invalid_argument("Camera resolution must be positive (got " +
+            std::to_string(width) + "x" + std::to_string(height) + ")");
+    if (fov <= 0.0 || fov >= 180.0)
+        throw std::invalid_argument("Camera FOV must be in (0, 180) degrees (got " +
+            std::to_string(fov) + ")");
+}
 
 Ray Camera::generateRay(int x, int y) const {
     double toRad = M_PI / 180;
