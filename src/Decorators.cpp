@@ -24,7 +24,7 @@ std::optional<HitRecord> TranslationDecorator::intersect(const Ray &ray) const {
 }
 
 RotationDecorator::RotationDecorator(PrimitivePtr inner, const Vec3 &angles)
-    : _inner(std::move(inner)), _angles(angles), _center{0, 0, 0} {
+    : _inner(std::move(inner)), _angles(angles) {
     _rotation = rotateX(angles.x) * rotateY(angles.y) * rotateZ(angles.z);
     _invRotation = _rotation.transpose();
 }
@@ -34,12 +34,12 @@ void RotationDecorator::configure(const std::unordered_map<std::string, double> 
 }
 
 std::optional<HitRecord> RotationDecorator::intersect(const Ray &ray) const {
-    Ray localRay = {_invRotation * (ray.origin - _center), _invRotation * ray.direction};
+    Ray localRay = {_invRotation * ray.origin, _invRotation * ray.direction};
 
     std::optional<HitRecord> hit = _inner->intersect(localRay);
     if (hit == std::nullopt) return std::nullopt;
 
-    hit->point = _rotation * hit->point + _center;
+    hit->point = _rotation * hit->point;
     hit->normal = normalize(_rotation * hit->normal);
     return hit;
 }

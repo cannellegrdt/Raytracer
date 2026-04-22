@@ -14,7 +14,6 @@
 struct SceneContext {
     Scene scene;   ///< Scene with all primitives and lights.
     Camera camera; ///< Camera for rendering.
-    std::string filename; ///< Input file name (without extension) for output naming.
 };
 
 #endif /* SCENECONTEXT_HPP_ */

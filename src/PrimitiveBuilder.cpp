@@ -60,20 +60,20 @@ PrimitivePtr PrimitiveBuilder::build() {
     PrimitivePtr primitive = std::move(*optBase);
     primitive->configure(_params, _material);
 
-    if (_translation)
+    if (_scale)
         primitive = PrimitivePtr(
-            new TranslationDecorator(std::move(primitive), _translation.value()),
-            &defaultDestroy<TranslationDecorator>
+            new ScaleDecorator(std::move(primitive), _scale.value()),
+            &defaultDestroy<ScaleDecorator>
         );
     if (_rotation)
         primitive = PrimitivePtr(
             new RotationDecorator(std::move(primitive), _rotation.value()),
             &defaultDestroy<RotationDecorator>
         );
-    if (_scale)
+    if (_translation)
         primitive = PrimitivePtr(
-            new ScaleDecorator(std::move(primitive), _scale.value()),
-            &defaultDestroy<ScaleDecorator>
+            new TranslationDecorator(std::move(primitive), _translation.value()),
+            &defaultDestroy<TranslationDecorator>
         );
     
     return primitive;

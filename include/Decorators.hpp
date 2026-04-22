@@ -38,7 +38,6 @@ public:
 private:
     PrimitivePtr _inner;   ///< Wrapped primitive.
     Vec3 _angles;          ///< Rotation angles.
-    Vec3 _center;          ///< Center of rotation.
     Mat3 _rotation;        ///< Rotation matrix.
     Mat3 _invRotation;     ///< Inverse rotation matrix.
 };
