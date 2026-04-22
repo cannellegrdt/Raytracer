@@ -45,7 +45,10 @@ std::optional<HitRecord> RotationDecorator::intersect(const Ray &ray) const {
 }
 
 ScaleDecorator::ScaleDecorator(PrimitivePtr inner, const Vec3 &scale)
-    : _inner(std::move(inner)), _scale(scale) {}
+    : _inner(std::move(inner)), _scale(scale) {
+    if (scale.x == 0.0 || scale.y == 0.0 || scale.z == 0.0)
+        throw std::invalid_argument("ScaleDecorator: scale components must be non-zero");
+}
 
 void ScaleDecorator::configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) {
     _inner->configure(params, std::move(mat));
