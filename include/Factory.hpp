@@ -27,21 +27,21 @@ public:
     /// @param key String identifier.
     /// @param creator Function that creates the object.
     void registerType(const std::string &key, CreatorFunc creator) {
-        creators_[key] = std::move(creator);
+        _creators[key] = std::move(creator);
     }
 
     /// @brief Creates an object by key.
     /// @param key String identifier.
     /// @return Optional containing created object, or empty if key not found.
     std::optional<Ptr> create(const std::string &key) const {
-        auto it = creators_.find(key);
-        if (it == creators_.end())
+        auto it = _creators.find(key);
+        if (it == _creators.end())
             return std::nullopt;
         return it->second();
     }
 
 private:
-    std::unordered_map<std::string, CreatorFunc> creators_;
+    std::unordered_map<std::string, CreatorFunc> _creators;
 };
 
 /// @brief Factory specialization for primitives.

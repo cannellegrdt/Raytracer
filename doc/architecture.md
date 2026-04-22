@@ -91,7 +91,7 @@ public:
     }
 
 private:
-    std::unordered_map<std::string, CreatorFunc> creators_;
+    std::unordered_map<std::string, CreatorFunc> _creators;
 };
 
 using PrimitiveFactory = Factory<IPrimitive, PrimitivePtr>;
@@ -140,7 +140,7 @@ public:
     void loadAll(const std::string &pluginsDir, PrimitiveFactory &factory);
 
 private:
-    std::vector<DLLoader<IPrimitive>> loadedPlugins_;
+    std::vector<DLLoader<IPrimitive>> _loadedPlugins;
 };
 
 
@@ -171,12 +171,12 @@ public:
     void addPrimitive(PrimitivePtr primitive);
     void addLight(std::unique_ptr<ILight> light);
 
-    const std::vector<PrimitivePtr> &primitives() const { return primitives_; }
-    const std::vector<std::unique_ptr<ILight>> &lights() const { return lights_; }
+    const std::vector<PrimitivePtr> &primitives() const { return _primitives; }
+    const std::vector<std::unique_ptr<ILight>> &lights() const { return _lights; }
 
 private:
-    std::vector<PrimitivePtr> primitives_;
-    std::vector<std::unique_ptr<ILight>> lights_;
+    std::vector<PrimitivePtr> _primitives;
+    std::vector<std::unique_ptr<ILight>> _lights;
 };
 
 

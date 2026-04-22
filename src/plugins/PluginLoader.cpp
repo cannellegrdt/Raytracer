@@ -26,7 +26,7 @@ void PluginLoader::loadAll(const std::string &pluginsDir, PrimitiveFactory &fact
                         factory.registerType(primitiveName, [rawCreate, rawDestroy]() -> PrimitivePtr {
                             return PrimitivePtr(rawCreate(), rawDestroy);
                         });
-                        loadedPlugins_.push_back(std::move(loader));
+                        _loadedPlugins.push_back(std::move(loader));
                     } catch (const std::exception &e) {
                         std::cerr << "Error: failed to load plugin " << path << ": " << e.what() << std::endl;
                     }

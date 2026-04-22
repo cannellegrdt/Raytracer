@@ -22,7 +22,7 @@ public:
     void loadAll(const std::string &pluginsDir, PrimitiveFactory &factory);
 
 private:
-    std::vector<DLLoader<IPrimitive>> loadedPlugins_;
+    std::vector<DLLoader<IPrimitive>> _loadedPlugins;
 };
 
 #endif /* PLUGINLOADER_HPP_ */
