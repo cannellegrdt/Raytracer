@@ -56,8 +56,17 @@ int main(int argc, char *argv[]) {
 
     try {
         SceneContext ctx = (*loaderOpt)->load(scene, primitiveFact);
+
+        std::filesystem::path inputPath(scene);
+        std::string stem = inputPath.stem().string();
+        std::filesystem::path outputDir = "output";
+        std::filesystem::create_directories(outputDir);
+        std::string outputPath = (outputDir / (stem + ".ppm")).string();
+
         Renderer renderer;
-        renderer.render(ctx);
+        renderer.render(ctx, outputPath);
+
+        std::cout << "Successfully created " << outputPath << "\n";
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 84;

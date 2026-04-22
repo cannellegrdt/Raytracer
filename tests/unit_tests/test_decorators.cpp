@@ -26,7 +26,7 @@ struct StubPrimitive : IPrimitive {
     std::optional<HitRecord> result = std::nullopt;
     mutable Ray lastRay{{0,0,0},{0,0,0}};
 
-    void configure(const std::unordered_map<std::string, double> &, const IMaterial *) override {}
+    void configure(const std::unordered_map<std::string, double> &, std::shared_ptr<IMaterial>) override {}
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         lastRay = ray;
         return result;

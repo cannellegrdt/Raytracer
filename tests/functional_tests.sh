@@ -156,6 +156,8 @@ EOF
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+OUTPUT_DIR="output"
+
 is_valid_ppm() {
     local file="$1"
     [ -f "$file" ] && [ -s "$file" ] || return 1
@@ -169,9 +171,16 @@ ppm_dimensions() {
 }
 
 run_scene() {
-    local cfg="$1" ppm="$2"
-    "$BINARY" "$cfg" > "$ppm" 2>/dev/null
+    local cfg="$1"
+    local name=$(basename "$cfg" .cfg)
+    "$BINARY" "$cfg" >/dev/null 2>&1
     echo $?
+}
+
+get_output_ppm() {
+    local cfg="$1"
+    local name=$(basename "$cfg" .cfg)
+    echo "$OUTPUT_DIR/${name}.ppm"
 }
 
 # ── 1. Binary ─────────────────────────────────────────────────────────────────
@@ -235,11 +244,12 @@ echo "not valid libconfig { !!!" > "$TMP_DIR/bad.cfg"
 section "PPM output — Sphere (MUST)"
 
 SPHERE_CFG="$TMP_DIR/sphere.cfg"
-SPHERE_PPM="$TMP_DIR/sphere.ppm"
 make_sphere_scene "$SPHERE_CFG"
-ec=$(run_scene "$SPHERE_CFG" "$SPHERE_PPM")
+ec=$(run_scene "$SPHERE_CFG")
+SPHERE_PPM=$(get_output_ppm "$SPHERE_CFG")
 
 [ "$ec" -eq 0 ]            && pass "Sphere scene → exit 0"        || fail "Sphere scene → expected exit 0, got $ec"
+[ -f "$SPHERE_PPM" ]       && pass "Sphere scene → output file created" || fail "Sphere scene → no output file"
 is_valid_ppm "$SPHERE_PPM" && pass "Sphere scene → valid PPM header" || fail "Sphere scene → invalid or missing PPM"
 [ -s "$SPHERE_PPM" ]       && pass "Sphere scene → non-empty output" || fail "Sphere scene → empty output"
 
@@ -252,45 +262,49 @@ echo "$dims" | grep -qE "^16[[:space:]]+16$" \
 section "PPM output — Plane (MUST)"
 
 PLANE_CFG="$TMP_DIR/plane.cfg"
-PLANE_PPM="$TMP_DIR/plane.ppm"
 make_plane_scene "$PLANE_CFG"
-ec=$(run_scene "$PLANE_CFG" "$PLANE_PPM")
+ec=$(run_scene "$PLANE_CFG")
+PLANE_PPM=$(get_output_ppm "$PLANE_CFG")
 
 [ "$ec" -eq 0 ]            && pass "Plane scene → exit 0"        || fail "Plane scene → expected exit 0, got $ec"
+[ -f "$PLANE_PPM" ]       && pass "Plane scene → output file created" || fail "Plane scene → no output file"
 is_valid_ppm "$PLANE_PPM" && pass "Plane scene → valid PPM header" || fail "Plane scene → invalid or missing PPM"
 
 # ── 5. PPM output — Cylinder ──────────────────────────────────────────────────
 section "PPM output — Cylinder (SHOULD)"
 
 CYL_CFG="$TMP_DIR/cylinder.cfg"
-CYL_PPM="$TMP_DIR/cylinder.ppm"
 make_cylinder_scene "$CYL_CFG"
-ec=$(run_scene "$CYL_CFG" "$CYL_PPM")
+ec=$(run_scene "$CYL_CFG")
+CYL_PPM=$(get_output_ppm "$CYL_CFG")
 
 [ "$ec" -eq 0 ]           && pass "Cylinder scene → exit 0"         || fail "Cylinder scene → expected exit 0, got $ec"
+[ -f "$CYL_PPM" ]       && pass "Cylinder scene → output file created" || fail "Cylinder scene → no output file"
 is_valid_ppm "$CYL_PPM"  && pass "Cylinder scene → valid PPM header" || fail "Cylinder scene → invalid or missing PPM"
 
 # ── 6. PPM output — Cone ─────────────────────────────────────────────────────
 section "PPM output — Cone (SHOULD)"
 
 CONE_CFG="$TMP_DIR/cone.cfg"
-CONE_PPM="$TMP_DIR/cone.ppm"
 make_cone_scene "$CONE_CFG"
-ec=$(run_scene "$CONE_CFG" "$CONE_PPM")
+ec=$(run_scene "$CONE_CFG")
+CONE_PPM=$(get_output_ppm "$CONE_CFG")
 
 [ "$ec" -eq 0 ]           && pass "Cone scene → exit 0"         || fail "Cone scene → expected exit 0, got $ec"
+[ -f "$CONE_PPM" ]       && pass "Cone scene → output file created" || fail "Cone scene → no output file"
 is_valid_ppm "$CONE_PPM" && pass "Cone scene → valid PPM header" || fail "Cone scene → invalid or missing PPM"
 
 # ── 7. Lighting ───────────────────────────────────────────────────────────────
 section "Lighting (MUST)"
 
 LIT_CFG="$TMP_DIR/lights.cfg"
-LIT_PPM="$TMP_DIR/lights.ppm"
 make_lights_scene "$LIT_CFG"
-ec=$(run_scene "$LIT_CFG" "$LIT_PPM")
+ec=$(run_scene "$LIT_CFG")
+LIT_PPM=$(get_output_ppm "$LIT_CFG")
 
 [ "$ec" -eq 0 ]          && pass "Lights scene (ambient + directional + point) → exit 0" \
                           || fail "Lights scene → expected exit 0, got $ec"
+[ -f "$LIT_PPM" ]       && pass "Lights scene → output file created" || fail "Lights scene → no output file"
 is_valid_ppm "$LIT_PPM" && pass "Lights scene → valid PPM header" \
                           || fail "Lights scene → invalid or missing PPM"
 
@@ -298,39 +312,45 @@ is_valid_ppm "$LIT_PPM" && pass "Lights scene → valid PPM header" \
 section "Translation decorator (MUST)"
 
 TR_CFG="$TMP_DIR/translate.cfg"
-TR_PPM="$TMP_DIR/translate.ppm"
 make_translate_scene "$TR_CFG"
-ec=$(run_scene "$TR_CFG" "$TR_PPM")
+ec=$(run_scene "$TR_CFG")
+TR_PPM=$(get_output_ppm "$TR_CFG")
 
 [ "$ec" -eq 0 ]         && pass "Translation scene → exit 0"        || fail "Translation scene → expected exit 0, got $ec"
+[ -f "$TR_PPM" ]       && pass "Translation scene → output file created" || fail "Translation scene → no output file"
 is_valid_ppm "$TR_PPM" && pass "Translation scene → valid PPM header" || fail "Translation scene → invalid or missing PPM"
 
-# ── 9. Output stream ──────────────────────────────────────────────────────────
-section "Output stream"
+# ── 9. Output file ───────────────────────────────────────────────────────────
+section "Output file"
 
 SPHERE_CFG2="$TMP_DIR/sphere2.cfg"
 make_sphere_scene "$SPHERE_CFG2"
 
-stdout=$("$BINARY" "$SPHERE_CFG2" 2>/dev/null)
-echo "$stdout" | head -c 2 | grep -qE "^P[36]" \
-    && pass "Valid scene → PPM written to stdout" \
-    || fail "Valid scene → PPM not found on stdout"
-
+# Run and capture stderr
 stderr=$("$BINARY" "$SPHERE_CFG2" 2>&1 1>/dev/null)
 [ -z "$stderr" ] \
     && pass "Valid scene → no unexpected output on stderr" \
     || fail "Valid scene → unexpected stderr: $stderr"
+
+# Check output file was created
+SPHERE_PPM2=$(get_output_ppm "$SPHERE_CFG2")
+[ -f "$SPHERE_PPM2" ] \
+    && pass "Valid scene → PPM file created in output/" \
+    || fail "Valid scene → PPM file not found in output/"
+
+is_valid_ppm "$SPHERE_PPM2" \
+    && pass "Valid scene → valid PPM in output/" \
+    || fail "Valid scene → invalid PPM in output/"
 
 # ── 10. Plugin system ─────────────────────────────────────────────────────────
 section "Plugin system"
 
 if ls plugins/*.so >/dev/null 2>&1; then
     pass "plugins/ directory contains .so files"
-    PLG_PPM="$TMP_DIR/plugin_check.ppm"
-    ec=$(run_scene "$SPHERE_CFG" "$PLG_PPM")
-    [ "$ec" -eq 0 ] && is_valid_ppm "$PLG_PPM" \
+    # Already ran sphere scene above - reuse that output
+    [ -f "$SPHERE_PPM" ] && is_valid_ppm "$SPHERE_PPM" \
         && pass "Render with plugins loaded → valid PPM" \
-        || fail "Render with plugins loaded → failed (exit $ec)"
+        || fail "Render with plugins loaded → failed"
 else
     skip "No .so files in plugins/ — plugin tests skipped"
 fi
@@ -342,11 +362,11 @@ DEMO_FOUND=0
 for scene in scenes/*.cfg; do
     [ -f "$scene" ] || continue
     DEMO_FOUND=1
-    ppm_out="$TMP_DIR/demo_$(basename "${scene%.cfg}").ppm"
-    "$BINARY" "$scene" > "$ppm_out" 2>/dev/null
+    "$BINARY" "$scene" >/dev/null 2>&1
     ec=$?
     name=$(basename "$scene")
-    [ "$ec" -eq 0 ] && is_valid_ppm "$ppm_out" \
+    ppm_out=$(get_output_ppm "$scene")
+    [ "$ec" -eq 0 ] && [ -f "$ppm_out" ] && is_valid_ppm "$ppm_out" \
         && pass "$name → exit 0, valid PPM" \
         || fail "$name → exit $ec or invalid PPM"
 done

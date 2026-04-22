@@ -12,7 +12,7 @@
 class MockPrimitive : public IPrimitive {
 public:
     std::optional<HitRecord> intersect(const Ray &) const override { return std::nullopt; }
-    void configure(const std::unordered_map<std::string, double> &, const IMaterial *) override {}
+    void configure(const std::unordered_map<std::string, double> &, std::shared_ptr<IMaterial>) override {}
 };
 
 class MockLight : public ILight {

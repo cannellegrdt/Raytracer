@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <limits>
 #include "Renderer.hpp"
 #include "IMaterial.hpp"
@@ -27,21 +28,27 @@ std::optional<HitRecord> Renderer::closestHit(const Ray &ray, const Scene &scene
     return closest;
 }
 
-void Renderer::render(const SceneContext &context) {
+void Renderer::render(const SceneContext &context, const std::string &outputPath) {
     int width = context.camera.getWidth();
     int height = context.camera.getHeight();
 
-    std::cout << "P3\n" << width << ' ' << height << "\n255\n";
+    std::ofstream outFile(outputPath);
+    if (!outFile) {
+        throw std::runtime_error("Error: cannot open output file '" + outputPath + "'");
+    }
+
+    outFile << "P3\n" << width << ' ' << height << "\n255\n";
 
     for (int y=0; y<height; y++) {
         for (int x=0; x<width; x++) {
             Ray ray = context.camera.generateRay(x, y);
             Color pixelColor = traceRay(ray, context.scene, MAX_DEPTH);
-            std::cout << toPPMByte(pixelColor.x) << ' '
+            outFile << toPPMByte(pixelColor.x) << ' '
                       << toPPMByte(pixelColor.y) << ' '
                       << toPPMByte(pixelColor.z) << '\n';
         }
     }
+    outFile.close();
 }
 
 Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {

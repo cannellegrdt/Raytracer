@@ -70,11 +70,11 @@ class ConditionalPrimitive : public IPrimitive {
     std::function<bool(const Ray &)> condition;
     double tHit;
     Vec3 normalVal;
-    const IMaterial *mat;
+    std::shared_ptr<IMaterial> mat;
 
 public:
-    ConditionalPrimitive(std::function<bool(const Ray &)> cond, double t, const Vec3 &norm, const IMaterial *m = nullptr)
-        : condition(std::move(cond)), tHit(t), normalVal(norm), mat(m) {}
+    ConditionalPrimitive(std::function<bool(const Ray &)> cond, double t, const Vec3 &norm, std::shared_ptr<IMaterial> m = nullptr)
+        : condition(std::move(cond)), tHit(t), normalVal(norm), mat(std::move(m)) {}
 
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         if (!condition(ray)) return std::nullopt;
@@ -87,8 +87,8 @@ public:
         return rec;
     }
 
-    void configure(const std::unordered_map<std::string, double> &, const IMaterial *m) override {
-        mat = m;
+    void configure(const std::unordered_map<std::string, double> &, std::shared_ptr<IMaterial> m) override {
+        mat = std::move(m);
     }
 };
 
@@ -96,8 +96,8 @@ static void addConditionalPrimitive(Scene &scene,
                                     std::function<bool(const Ray &)> condition,
                                     double t,
                                     const Vec3 &normal,
-                                    const IMaterial *mat = nullptr) {
-    PrimitivePtr ptr(new ConditionalPrimitive(std::move(condition), t, normal, mat),
+                                    std::shared_ptr<IMaterial> mat = nullptr) {
+    PrimitivePtr ptr(new ConditionalPrimitive(std::move(condition), t, normal, std::move(mat)),
                      [](IPrimitive *p) { delete p; });
     scene.addPrimitive(std::move(ptr));
 }
@@ -113,12 +113,12 @@ Test(traceRay, returns_black_when_no_hit) {
 }
 
 Test(traceRay, computes_direct_lighting) {
-    MockMaterial mat(Vec3(1, 1, 1), false);
+    std::shared_ptr<IMaterial> mat = std::make_shared<MockMaterial>(Vec3(1, 1, 1), false);
     Scene scene;
 
     addConditionalPrimitive(scene,
         [](const Ray &r) { return r.origin.x == 0 && r.origin.y == 0 && r.origin.z == 0; },
-        5.0, Vec3(0, 0, 1), &mat);
+        5.0, Vec3(0, 0, 1), mat);
 
     scene.addLight(std::make_unique<MockLight>(Vec3(0, 0, 1), Vec3(1, 1, 1), 10.0));
 
@@ -132,12 +132,12 @@ Test(traceRay, computes_direct_lighting) {
 }
 
 Test(traceRay, respects_max_depth_no_recursion) {
-    MockMaterial mat(Vec3(1, 1, 1), true);
+    std::shared_ptr<IMaterial> mat = std::make_shared<MockMaterial>(Vec3(1, 1, 1), true);
     Scene scene;
 
     addConditionalPrimitive(scene,
         [](const Ray &r) { return r.origin.x == 0 && r.origin.y == 0 && r.origin.z == 0; },
-        5.0, Vec3(0, 0, 1), &mat);
+        5.0, Vec3(0, 0, 1), mat);
 
     Renderer renderer;
     Ray ray(Vec3(0, 0, 0), Vec3(0, 0, -1));
@@ -149,12 +149,12 @@ Test(traceRay, respects_max_depth_no_recursion) {
 }
 
 Test(traceRay, blocks_light_when_shadow_ray_hits) {
-    MockMaterial mat(Vec3(1, 1, 1), false);
+    std::shared_ptr<IMaterial> mat = std::make_shared<MockMaterial>(Vec3(1, 1, 1), false);
     Scene scene;
 
     addConditionalPrimitive(scene,
         [](const Ray &r) { return r.origin.x == 0 && r.origin.y == 0 && r.origin.z == 0; },
-        5.0, Vec3(0, 0, 1), &mat);
+        5.0, Vec3(0, 0, 1), mat);
 
     addConditionalPrimitive(scene,
         [](const Ray &r) { return r.origin.x == 0 && r.origin.y == 0 && r.origin.z == -5; },
@@ -172,12 +172,12 @@ Test(traceRay, blocks_light_when_shadow_ray_hits) {
 }
 
 Test(traceRay, allows_light_when_no_blocker) {
-    MockMaterial mat(Vec3(1, 1, 1), false);
+    std::shared_ptr<IMaterial> mat = std::make_shared<MockMaterial>(Vec3(1, 1, 1), false);
     Scene scene;
 
     addConditionalPrimitive(scene,
         [](const Ray &r) { return r.origin.x == 0 && r.origin.y == 0 && r.origin.z == 0; },
-        5.0, Vec3(1, 0, 0), &mat);
+        5.0, Vec3(1, 0, 0), mat);
 
     scene.addLight(std::make_unique<MockLight>(Vec3(1, 0, 0), Vec3(0.5, 0.5, 0.5), 10.0));
 
@@ -191,12 +191,12 @@ Test(traceRay, allows_light_when_no_blocker) {
 }
 
 Test(traceRay, no_contribution_when_normal_perpendicular_to_light) {
-    MockMaterial mat(Vec3(1, 1, 1), false);
+    std::shared_ptr<IMaterial> mat = std::make_shared<MockMaterial>(Vec3(1, 1, 1), false);
     Scene scene;
 
     addConditionalPrimitive(scene,
         [](const Ray &r) { return r.origin.x == 0 && r.origin.y == 0 && r.origin.z == 0; },
-        5.0, Vec3(0, 0, 1), &mat);
+        5.0, Vec3(0, 0, 1), mat);
 
     scene.addLight(std::make_unique<MockLight>(Vec3(1, 0, 0), Vec3(1, 1, 1), 10.0));
 
@@ -210,13 +210,13 @@ Test(traceRay, no_contribution_when_normal_perpendicular_to_light) {
 }
 
 Test(traceRay, handles_scattered_ray_recursion) {
-    MockMaterial mat(Vec3(0.5, 0.5, 0.5), true,
+    std::shared_ptr<IMaterial> mat = std::make_shared<MockMaterial>(Vec3(0.5, 0.5, 0.5), true,
                      Ray(Vec3(0, 0, -5), Vec3(0, 0, -1)));
     Scene scene;
 
     addConditionalPrimitive(scene,
         [](const Ray &r) { return r.origin.x == 0 && r.origin.y == 0 && r.origin.z == 0; },
-        5.0, Vec3(0, 0, 1), &mat);
+        5.0, Vec3(0, 0, 1), mat);
 
     scene.addLight(std::make_unique<MockLight>(Vec3(0, 0, 1), Vec3(1, 1, 1), 10.0));
 

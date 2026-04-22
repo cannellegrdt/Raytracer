@@ -15,9 +15,9 @@ public:
     const IMaterial *material = nullptr;
 
     std::optional<HitRecord> intersect(const Ray &) const override { return std::nullopt; }
-    void configure(const std::unordered_map<std::string, double> &, const IMaterial *mat) override {
+    void configure(const std::unordered_map<std::string, double> &, std::shared_ptr<IMaterial> mat) override {
         configured = true;
-        material = mat;
+        material = mat.get();
     }
 };
 

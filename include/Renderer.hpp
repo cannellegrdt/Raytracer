@@ -21,7 +21,8 @@ class Renderer {
 public:
     /// @brief Renders the scene.
     /// @param context Scene context containing all rendering information.
-    void render(const SceneContext &context);
+    /// @param outputPath Path for the output PPM file.
+    void render(const SceneContext &context, const std::string &outputPath);
 
 #ifdef UNIT_TEST
     friend class RendererTestAccessor;

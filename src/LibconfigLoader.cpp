@@ -162,5 +162,5 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             }
         }
     }
-    return SceneContext{std::move(scene), camera};
+    return SceneContext{std::move(scene), camera, ""};
 }

@@ -12,7 +12,7 @@ public:
     int tag;
     explicit MockPrimitive(int tag = 0) : tag(tag) {}
     std::optional<HitRecord> intersect(const Ray &) const override { return std::nullopt; }
-    void configure(const std::unordered_map<std::string, double> &, const IMaterial *) override {}
+    void configure(const std::unordered_map<std::string, double> &, std::shared_ptr<IMaterial>) override {}
 };
 
 static PrimitivePtr makeMock(int tag = 0) {
