@@ -12,7 +12,7 @@
 #include "IMaterial.hpp"
 #include "ScatterResult.hpp"
 
-constexpr int MAX_DEPTH = 50;
+constexpr int MAX_DEPTH = 10;
 
 std::optional<HitRecord> Renderer::closestHit(const Ray &ray, const Scene &scene) {
     std::optional<HitRecord> closest;
@@ -49,6 +49,8 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
         }
     }
     outFile.close();
+    if (outFile.fail())
+        throw std::runtime_error("Write error on output file: " + outputPath);
 }
 
 Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
@@ -62,12 +64,12 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
     for (auto &light : scene.lights()) {
         LightSample sample = light->getSample(hit->point, hit->normal);
 
-        if (sample.direction.x == 0 && sample.direction.y == 0 && sample.direction.z == 0) {
+        if (sample.isAmbient) {
             lightContrib += sample.color;
             continue;
         }
 
-        Ray shadowRay{hit->point, sample.direction};
+        Ray shadowRay{hit->point + 1e-4 * hit->normal, sample.direction};
         auto blocker = closestHit(shadowRay, scene);
         if (blocker && blocker->t < sample.distance)
             continue;

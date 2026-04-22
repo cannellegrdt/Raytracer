@@ -24,7 +24,9 @@ static double toDouble(const libconfig::Setting &s) {
         return static_cast<double>((int)s);
     if (s.getType() == libconfig::Setting::TypeInt64)
         return static_cast<double>((long long)s);
-    return (double)s;
+    if (s.getType() == libconfig::Setting::TypeFloat)
+        return static_cast<double>((double)s);
+    throw std::runtime_error(std::string("Expected numeric setting at: ") + s.getPath());
 }
 
 static std::optional<std::reference_wrapper<const libconfig::Setting>> checkValues(const libconfig::Config& cfg, const std::string& path) {
@@ -62,9 +64,9 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
     }
 
     const libconfig::Setting &cam = cfg.lookup("camera");
-    Vec3 position{cam["position"]["x"], cam["position"]["y"], cam["position"]["z"]};
-    Vec3 rotation{cam["rotation"]["x"], cam["rotation"]["y"], cam["rotation"]["z"]};
-    double fov = cam["fieldOfView"];
+    Vec3 position{toDouble(cam["position"]["x"]), toDouble(cam["position"]["y"]), toDouble(cam["position"]["z"])};
+    Vec3 rotation{toDouble(cam["rotation"]["x"]), toDouble(cam["rotation"]["y"]), toDouble(cam["rotation"]["z"])};
+    double fov = toDouble(cam["fieldOfView"]);
     int width = cam["resolution"]["width"];
     int height = cam["resolution"]["height"];
     Camera camera{position, rotation, fov, width, height};
@@ -162,5 +164,5 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             }
         }
     }
-    return SceneContext{std::move(scene), camera, ""};
+    return SceneContext{std::move(scene), camera};
 }
