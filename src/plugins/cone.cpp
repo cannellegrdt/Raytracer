@@ -38,6 +38,7 @@ public:
         double b = 2.0 * (dotDA * dotOA - k * dot(ray.direction, vecOA));
         double c = dotOA * dotOA - k * dot(vecOA, vecOA);
 
+        if (std::abs(a) < epsilon) return std::nullopt;
         double discr = b * b - 4 * a * c;
         if (discr < 0.0) return std::nullopt;
         
@@ -49,7 +50,9 @@ public:
 
         Vec3 point = ray.at(t);
         Vec3 radial = point - _apex;
-        Vec3 normal = normalize(dot(radial, _axis) * _axis - k * radial);
+        Vec3 rawNormal = dot(radial, _axis) * _axis - k * radial;
+        if (length(rawNormal) < epsilon) return std::nullopt;
+        Vec3 normal = normalize(rawNormal);
         bool frontFace = dot(ray.direction, normal) < 0.0;
         if (!frontFace)
             normal = -normal;
