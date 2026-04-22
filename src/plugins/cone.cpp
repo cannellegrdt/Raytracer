@@ -16,7 +16,7 @@ public:
     ~Cone() override = default;
 
     void configure(const std::unordered_map<std::string, double> &params,
-        const IMaterial *mat) override {
+        std::shared_ptr<IMaterial> mat) override {
         _apex = { params.at("x"), params.at("y"), params.at("z") };
         Vec3 axis = { params.at("ax"), params.at("ay"), params.at("az") };
         if (length(axis) < epsilon)
@@ -25,7 +25,7 @@ public:
         _angle = params.at("angle");
         if (_angle <= 0.0 || _angle >= M_PI / 2.0)
             throw std::invalid_argument("Cone half-angle must be in (0, pi/2)");
-        _material = mat;
+        _material = std::move(mat);
     }
 
     std::optional<HitRecord> intersect(const Ray &ray) const override {
@@ -61,7 +61,7 @@ private:
     Vec3 _apex;
     Vec3 _axis;
     double _angle;
-    const IMaterial *_material;
+    std::shared_ptr<IMaterial> _material;
 };
 
 extern "C" IPrimitive *create() { return new Cone(); };

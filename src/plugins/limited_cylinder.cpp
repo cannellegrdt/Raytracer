@@ -16,7 +16,7 @@ public:
     ~LimitedCylinder() override = default;
 
     void configure(const std::unordered_map<std::string, double> &params,
-        const IMaterial *mat) override {
+        std::shared_ptr<IMaterial> mat) override {
         _center = { params.at("x"), params.at("y"), params.at("z") };
         Vec3 axis = { params.at("ax"), params.at("ay"), params.at("az") };
         if (length(axis) < epsilon)
@@ -28,7 +28,7 @@ public:
         _height = params.at("h");
         if (_height <= 0.0)
             throw std::invalid_argument("Limited cylinder must have a height");
-        _material = mat;
+        _material = std::move(mat);
     }
 
     std::optional<HitRecord> intersect(const Ray &ray) const override {
@@ -48,7 +48,7 @@ private:
     Vec3 _axis;
     double _height;
     double _radius;
-    const IMaterial *_material;
+    std::shared_ptr<IMaterial> _material;
 
     std::optional<HitRecord> intersectBody(const Ray &ray) const {
         Vec3 dPrime = ray.direction - dot(ray.direction, _axis) * _axis;

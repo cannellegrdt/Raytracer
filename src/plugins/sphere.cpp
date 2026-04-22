@@ -15,12 +15,12 @@ public:
     ~Sphere() override = default;
 
     void configure(const std::unordered_map<std::string, double> &params,
-        const IMaterial *mat) override {
+        std::shared_ptr<IMaterial> mat) override {
         _center = { params.at("x"), params.at("y"), params.at("z") };
         _radius = params.at("r");
         if (_radius <= 0.0)
             throw std::invalid_argument("Sphere radius must be > 0");
-        _material = mat;
+        _material = std::move(mat);
     }
 
     std::optional<HitRecord> intersect(const Ray &ray) const override {
@@ -50,7 +50,7 @@ public:
 private:
     Vec3 _center;
     double _radius;
-    const IMaterial *_material;
+    std::shared_ptr<IMaterial> _material;
 };
 
 extern "C" IPrimitive *create() { return new Sphere(); };

@@ -18,7 +18,7 @@ struct HitRecord {
     double t;
     Vec3 point;
     Vec3 normal;
-    const IMaterial *material;
+    std::shared_ptr<IMaterial> material;
     bool frontFace;
 };
 
@@ -40,6 +40,7 @@ struct LightSample {
 
 class IPrimitive {
 public:
+    virtual void configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) = 0;
     virtual std::optional<HitRecord> intersect(const Ray &ray) const = 0;
     virtual ~IPrimitive() = default;
 };

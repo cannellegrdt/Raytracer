@@ -15,13 +15,13 @@ public:
     ~Plane() override = default;
 
     void configure(const std::unordered_map<std::string, double> &params,
-        const IMaterial *mat) override {
+        std::shared_ptr<IMaterial> mat) override {
         _center = { params.at("x"), params.at("y"), params.at("z") };
         Vec3 n = { params.at("nx"), params.at("ny"), params.at("nz") };
         if (length(n) < epsilon)
             throw std::invalid_argument("Plane normal cannot be zero");
         _normal = normalize(n);
-        _material = mat;
+        _material = std::move(mat);
     }
 
     std::optional<HitRecord> intersect(const Ray &ray) const override {
@@ -41,7 +41,7 @@ public:
 private:
     Vec3 _center;
     Vec3 _normal;
-    const IMaterial *_material;
+    std::shared_ptr<IMaterial> _material;
 };
 
 extern "C" IPrimitive *create() { return new Plane(); };

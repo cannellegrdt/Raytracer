@@ -17,7 +17,7 @@ public:
     /// @param inner Primitive to wrap.
     /// @param offset Translation vector.
     TranslationDecorator(PrimitivePtr inner, const Vec3 &offset);
-    void configure(const std::unordered_map<std::string, double> &params, const IMaterial *mat) override;
+    void configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) override;
     std::optional<HitRecord> intersect(const Ray &ray) const override;
 
 private:
@@ -32,7 +32,7 @@ public:
     /// @param inner Primitive to wrap.
     /// @param angles Rotation angles (radians) for X, Y, Z.
     RotationDecorator(PrimitivePtr inner, const Vec3 &angles);
-    void configure(const std::unordered_map<std::string, double> &params, const IMaterial *mat) override;
+    void configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) override;
     std::optional<HitRecord> intersect(const Ray &ray) const override;
 
 private:
@@ -50,7 +50,7 @@ public:
     /// @param inner Primitive to wrap.
     /// @param scale Scale factors for X, Y, Z.
     ScaleDecorator(PrimitivePtr inner, const Vec3 &scale);
-    void configure(const std::unordered_map<std::string, double> &params, const IMaterial *mat) override;
+    void configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) override;
     std::optional<HitRecord> intersect(const Ray &ray) const override;
 
 private:

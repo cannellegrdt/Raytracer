@@ -125,8 +125,9 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             for (const auto &field : fields)
                 params[field] = toDouble(elem[field.c_str()]);
             
+            auto material = buildMaterial(elem["material"]);
             scene.addPrimitive(
-                builder.setType(factoryKey).setParams(params).setMaterial(buildMaterial(elem["material"])).build()
+                builder.setType(factoryKey).setParams(params).setMaterial(material).build()
             );
             builder.reset();
         }

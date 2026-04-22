@@ -58,7 +58,7 @@ PrimitivePtr PrimitiveBuilder::build() {
         throw std::runtime_error("PrimitiveBuilder::build(): unknown primitive type '" + _type + "'");
 
     PrimitivePtr primitive = std::move(*optBase);
-    primitive->configure(_params, _material.get());
+    primitive->configure(_params, _material);
 
     if (_translation)
         primitive = PrimitivePtr(

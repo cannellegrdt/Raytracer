@@ -10,8 +10,8 @@
 TranslationDecorator::TranslationDecorator(PrimitivePtr inner, const Vec3 &offset)
     : _inner(std::move(inner)), _offset(offset) {}
 
-void TranslationDecorator::configure(const std::unordered_map<std::string, double> &params, const IMaterial *mat) {
-    _inner->configure(params, mat);
+void TranslationDecorator::configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) {
+    _inner->configure(params, std::move(mat));
 }
 
 std::optional<HitRecord> TranslationDecorator::intersect(const Ray &ray) const {
@@ -29,8 +29,8 @@ RotationDecorator::RotationDecorator(PrimitivePtr inner, const Vec3 &angles)
     _invRotation = _rotation.transpose();
 }
 
-void RotationDecorator::configure(const std::unordered_map<std::string, double> &params, const IMaterial *mat) {
-    _inner->configure(params, mat);
+void RotationDecorator::configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) {
+    _inner->configure(params, std::move(mat));
 }
 
 std::optional<HitRecord> RotationDecorator::intersect(const Ray &ray) const {
@@ -47,8 +47,8 @@ std::optional<HitRecord> RotationDecorator::intersect(const Ray &ray) const {
 ScaleDecorator::ScaleDecorator(PrimitivePtr inner, const Vec3 &scale)
     : _inner(std::move(inner)), _scale(scale) {}
 
-void ScaleDecorator::configure(const std::unordered_map<std::string, double> &params, const IMaterial *mat) {
-    _inner->configure(params, mat);
+void ScaleDecorator::configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) {
+    _inner->configure(params, std::move(mat));
 }
 
 std::optional<HitRecord> ScaleDecorator::intersect(const Ray &ray) const {

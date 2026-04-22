@@ -7,6 +7,7 @@
 
 #ifndef IPRIMITIVE_HPP_
     #define IPRIMITIVE_HPP_
+    #include <memory>
     #include <optional>
     #include <stdexcept>
     #include <unordered_map>
@@ -27,8 +28,8 @@ public:
 
     /// @brief Configures the primitive with parameters from scene file.
     /// @param params Map of parameter names to values.
-    /// @param mat Pointer to material to apply.
-    virtual void configure(const std::unordered_map<std::string, double> &params, const IMaterial *mat) = 0;
+    /// @param mat Shared pointer to material to apply.
+    virtual void configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) = 0;
     virtual ~IPrimitive() = default;
 };
 

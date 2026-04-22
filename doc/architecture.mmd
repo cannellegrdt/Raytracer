@@ -3,6 +3,7 @@ classDiagram
 
     class IPrimitive {
         <<interface>>
+        +configure(map, shared_ptr~IMaterial~)
         +intersect(Ray) optional~HitRecord~
     }
     class IMaterial {
@@ -64,7 +65,7 @@ classDiagram
         +t double
         +point Vec3
         +normal Vec3
-        +material IMaterial*
+        +material shared_ptr~IMaterial~
     }
 
     ISceneLoader <|.. LibconfigLoader : implements
