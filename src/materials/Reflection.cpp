@@ -1,0 +1,15 @@
+/*
+ * Project: Raytracer
+ * File name: Reflection.cpp
+ * Author: Cannelle Gourdet - lankley
+ * File description: ...
+ */
+
+#include "Reflection.hpp"
+
+ScatterResult Reflection::scatter(const Ray &ray, const HitRecord &hit) const {
+    Vec3 dir = normalize(ray.direction);
+    Vec3 reflected = normalize(dir - 2 * dot(dir, hit.normal) * hit.normal);
+    Vec3 origin = hit.point + 1e-4 * hit.normal;
+    return ScatterResult{_color, Ray{origin, reflected}};
+}

@@ -6,8 +6,10 @@
 ##
 
 CXX	:=	g++
+INCLUDE_DIRS	:=	$(shell find include/ -type d)
+
 CXXFLAGS	:=	-Wall -Wextra -Werror -std=c++20
-CXXFLAGS	+=	-I./include
+CXXFLAGS	+=	$(addprefix -I,$(INCLUDE_DIRS))
 CXXFLAGS	+=	-fPIC
 
 LDFLAGS	:=	-lconfig++ -ldl
