@@ -28,6 +28,14 @@ public:
     /// @return Ray from camera through the pixel.
     Ray generateRay(int x, int y) const;
 
+    /// @brief Gets the image width.
+    /// @return Image width in pixels.
+    int getWidth() const { return _width; }
+
+    /// @brief Gets the image height.
+    /// @return Image height in pixels.
+    int getHeight() const { return _height; }
+
 private:
     Vec3 _position;    ///< Camera position in world space.
     Vec3 _rotation;    ///< Camera rotation (Euler angles).

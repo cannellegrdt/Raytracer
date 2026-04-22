@@ -51,7 +51,7 @@ $(NAME): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(TEST_DIR)/%.o: $(TEST_DIR)/%.cpp
-	$(CXX) $(filter-out -Werror,$(CXXFLAGS)) -c $< -o $@
+	$(CXX) $(filter-out -Werror,$(CXXFLAGS)) -DUNIT_TEST -c $< -o $@
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

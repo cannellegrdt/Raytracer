@@ -97,3 +97,13 @@ Test(camera, zero_rotation_produces_forward_direction) {
     cr_assert_float_eq(ray.direction.y, 0.0, 1e-10);
     cr_assert_float_eq(ray.direction.z, 1.0, 1e-10);
 }
+
+Test(camera, getWidth_returns_constructed_width) {
+    Camera cam(Vec3(0, 0, 0), Vec3(0, 0, 0), 90.0, 800, 600);
+    cr_assert_eq(cam.getWidth(), 800);
+}
+
+Test(camera, getHeight_returns_constructed_height) {
+    Camera cam(Vec3(0, 0, 0), Vec3(0, 0, 0), 90.0, 800, 600);
+    cr_assert_eq(cam.getHeight(), 600);
+}
