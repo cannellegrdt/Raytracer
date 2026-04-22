@@ -28,22 +28,18 @@ section() { echo -e "\n${BOLD}=== $1 ===${RESET}"; }
 
 make_sphere_scene() {
     cat > "$1" << 'EOF'
-camera:
-{
+camera = {
     resolution = { width = 16; height = 16; };
     position = { x = 0.0; y = 0.0; z = -5.0; };
     rotation = { x = 0.0; y = 0.0; z = 0.0; };
     fieldOfView = 60.0;
 };
-primitives:
-{
-    spheres = ( { x = 0.0; y = 0.0; z = 0.0; r = 1.0; color = { r = 255; g = 64; b = 64; }; } );
+primitives = {
+    spheres = ( { x = 0.0; y = 0.0; z = 0.0; r = 1.0; material = { type = "flat"; color = { r = 1.0; g = 0.25; b = 0.25; }; }; } );
     planes  = ();
 };
-lights:
-{
-    ambient = 0.4;
-    diffuse = 0.6;
+lights = {
+    ambient = ( { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.4; } );
     directional = ();
     point = ();
 };
@@ -52,22 +48,18 @@ EOF
 
 make_plane_scene() {
     cat > "$1" << 'EOF'
-camera:
-{
+camera = {
     resolution = { width = 16; height = 16; };
     position = { x = 0.0; y = 0.0; z = 5.0; };
     rotation = { x = 0.0; y = 0.0; z = 0.0; };
     fieldOfView = 60.0;
 };
-primitives:
-{
+primitives = {
     spheres = ();
-    planes  = ( { axis = "Z"; position = -1.0; color = { r = 64; g = 255; b = 64; }; } );
+    planes  = ( { x = 0.0; y = 0.0; z = -1.0; nx = 0.0; ny = 0.0; nz = 1.0; material = { type = "flat"; color = { r = 0.25; g = 1.0; b = 0.25; }; }; } );
 };
-lights:
-{
-    ambient = 0.5;
-    diffuse = 0.5;
+lights = {
+    ambient = ( { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.5; } );
     directional = ();
     point = ();
 };
@@ -76,23 +68,19 @@ EOF
 
 make_cylinder_scene() {
     cat > "$1" << 'EOF'
-camera:
-{
+camera = {
     resolution = { width = 16; height = 16; };
     position = { x = 0.0; y = 0.0; z = -5.0; };
     rotation = { x = 0.0; y = 0.0; z = 0.0; };
     fieldOfView = 60.0;
 };
-primitives:
-{
+primitives = {
     spheres   = ();
     planes    = ();
-    cylinders = ( { x = 0.0; y = 0.0; z = 0.0; r = 1.0; color = { r = 64; g = 64; b = 255; }; } );
+    cylinders = ( { x = 0.0; y = 0.0; z = 0.0; ax = 0.0; ay = 1.0; az = 0.0; r = 1.0; material = { type = "flat"; color = { r = 0.25; g = 0.25; b = 1.0; }; }; } );
 };
-lights:
-{
-    ambient = 0.4;
-    diffuse = 0.6;
+lights = {
+    ambient = ( { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.4; } );
     directional = ();
     point = ();
 };
@@ -101,23 +89,19 @@ EOF
 
 make_cone_scene() {
     cat > "$1" << 'EOF'
-camera:
-{
+camera = {
     resolution = { width = 16; height = 16; };
     position = { x = 0.0; y = 0.0; z = -5.0; };
     rotation = { x = 0.0; y = 0.0; z = 0.0; };
     fieldOfView = 60.0;
 };
-primitives:
-{
+primitives = {
     spheres = ();
     planes  = ();
-    cones   = ( { x = 0.0; y = 0.0; z = 0.0; angle = 30.0; color = { r = 255; g = 255; b = 64; }; } );
+    cones   = ( { x = 0.0; y = 0.0; z = 0.0; ax = 0.0; ay = 1.0; az = 0.0; angle = 0.5236; material = { type = "flat"; color = { r = 1.0; g = 1.0; b = 0.25; }; }; } );
 };
-lights:
-{
-    ambient = 0.4;
-    diffuse = 0.6;
+lights = {
+    ambient = ( { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.4; } );
     directional = ();
     point = ();
 };
@@ -126,52 +110,44 @@ EOF
 
 make_lights_scene() {
     cat > "$1" << 'EOF'
-camera:
-{
+camera = {
     resolution = { width = 16; height = 16; };
     position = { x = 0.0; y = 0.0; z = -5.0; };
     rotation = { x = 0.0; y = 0.0; z = 0.0; };
     fieldOfView = 60.0;
 };
-primitives:
-{
-    spheres = ( { x = 0.0; y = 0.0; z = 0.0; r = 1.0; color = { r = 200; g = 200; b = 200; }; } );
+primitives = {
+    spheres = ( { x = 0.0; y = 0.0; z = 0.0; r = 1.0; material = { type = "flat"; color = { r = 0.78; g = 0.78; b = 0.78; }; }; } );
     planes  = ();
 };
-lights:
-{
-    ambient = 0.3;
-    diffuse = 0.7;
-    directional = ( { x = 1.0; y = -1.0; z = 0.5; color = { r = 255; g = 255; b = 255; }; } );
-    point       = ( { x = 3.0; y = 3.0;  z = -3.0; color = { r = 255; g = 200; b = 100; }; } );
+lights = {
+    ambient = ( { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.3; } );
+    directional = ( { direction = { x = 1.0; y = -1.0; z = 0.5; }; color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 1.0; } );
+    point       = ( { position = { x = 3.0; y = 3.0; z = -3.0; }; color = { r = 1.0; g = 0.78; b = 0.39; }; intensity = 1.0; } );
 };
 EOF
 }
 
 make_translate_scene() {
     cat > "$1" << 'EOF'
-camera:
-{
+camera = {
     resolution = { width = 16; height = 16; };
     position = { x = 0.0; y = 0.0; z = -5.0; };
     rotation = { x = 0.0; y = 0.0; z = 0.0; };
     fieldOfView = 60.0;
 };
-primitives:
-{
+primitives = {
     spheres = (
         {
             x = 0.0; y = 0.0; z = 0.0; r = 0.8;
-            color = { r = 255; g = 128; b = 0; };
+            material = { type = "flat"; color = { r = 1.0; g = 0.5; b = 0.0; }; };
             translation = { x = 1.0; y = 0.0; z = 0.0; };
         }
     );
     planes = ();
 };
-lights:
-{
-    ambient = 0.5;
-    diffuse = 0.5;
+lights = {
+    ambient = ( { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.5; } );
     directional = ();
     point = ();
 };
