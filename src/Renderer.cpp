@@ -61,7 +61,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
     ScatterResult scattered = hit->material->scatter(ray, *hit);
 
     Color lightContrib{0, 0, 0};
-    for (auto &light : scene.lights()) {
+    for (const auto &light : scene.lights()) {
         LightSample sample = light->getSample(hit->point, hit->normal);
 
         if (sample.isAmbient) {

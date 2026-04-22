@@ -124,13 +124,35 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             const libconfig::Setting &elem = primitive[j];
 
             std::unordered_map<std::string, double> params;
-            for (const auto &field : fields)
-                params[field] = toDouble(elem[field.c_str()]);
-            
-            auto material = buildMaterial(elem["material"]);
-            scene.addPrimitive(
-                builder.setType(factoryKey).setParams(params).setMaterial(material).build()
-            );
+            try {
+                for (const auto &field : fields)
+                    params[field] = toDouble(elem[field.c_str()]);
+            } catch (const libconfig::SettingNotFoundException &e) {
+                throw std::runtime_error(std::string("Missing primitive field: ") + e.getPath());
+            }
+
+            std::shared_ptr<IMaterial> material;
+            try {
+                material = buildMaterial(elem["material"]);
+            } catch (const libconfig::SettingNotFoundException &e) {
+                throw std::runtime_error(std::string("Missing material field: ") + e.getPath());
+            }
+            builder.setType(factoryKey).setParams(params).setMaterial(material);
+
+            if (elem.exists("translation")) {
+                const libconfig::Setting &t = elem["translation"];
+                builder.setTranslation({toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])});
+            }
+            if (elem.exists("rotation")) {
+                const libconfig::Setting &r = elem["rotation"];
+                builder.setRotation({toDouble(r["x"]), toDouble(r["y"]), toDouble(r["z"])});
+            }
+            if (elem.exists("scale")) {
+                const libconfig::Setting &s = elem["scale"];
+                builder.setScale({toDouble(s["x"]), toDouble(s["y"]), toDouble(s["z"])});
+            }
+
+            scene.addPrimitive(builder.build());
             builder.reset();
         }
     }
