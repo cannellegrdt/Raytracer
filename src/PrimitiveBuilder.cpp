@@ -35,12 +35,18 @@ PrimitiveBuilder &PrimitiveBuilder::setScale(const Vec3 &s) {
     return *this;
 }
 
+PrimitiveBuilder &PrimitiveBuilder::setParams(const std::unordered_map<std::string, double> &params) {
+    _params = params;
+    return *this;
+}
+
 void PrimitiveBuilder::reset() {
     _type.clear();
     _material.reset();
     _translation.reset();
     _rotation.reset();
     _scale.reset();
+    _params.clear();
 }
 
 PrimitivePtr PrimitiveBuilder::build() {
@@ -52,7 +58,7 @@ PrimitivePtr PrimitiveBuilder::build() {
         throw std::runtime_error("PrimitiveBuilder::build(): unknown primitive type '" + _type + "'");
 
     PrimitivePtr primitive = std::move(*optBase);
-    primitive->configure({}, _material.get());
+    primitive->configure(_params, _material.get());
 
     if (_translation)
         primitive = PrimitivePtr(

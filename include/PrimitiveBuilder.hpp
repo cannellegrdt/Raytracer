@@ -7,6 +7,8 @@
 
 #ifndef PRIMITIVEBUILDER_HPP_
     #define PRIMITIVEBUILDER_HPP_
+    #include <unordered_map>
+    #include <string>
     #include "Type.hpp"
     #include "Factory.hpp"
 
@@ -44,6 +46,11 @@ public:
     /// @return Reference to this builder for chaining.
     PrimitiveBuilder &setScale(const Vec3 &s);
 
+    /// @brief Sets the geometry parameters passed to configure().
+    /// @param params Map of parameter names to values (e.g. {"x",0}, {"r",1}).
+    /// @return Reference to this builder for chaining.
+    PrimitiveBuilder &setParams(const std::unordered_map<std::string, double> &params);
+
     /// @brief Builds the primitive with all configured options.
     /// @return Unique pointer to the constructed primitive.
     PrimitivePtr build();
@@ -52,12 +59,13 @@ public:
     void reset();
 
 private:
-    PrimitiveFactory &_factory;             ///< Factory for creating primitives.
-    std::string _type;                      ///< Primitive type identifier.
-    std::shared_ptr<IMaterial> _material;   ///< Material for the primitive.
-    std::optional<Vec3> _translation;       ///< Translation vector.
-    std::optional<Vec3> _rotation;          ///< Rotation angles.
-    std::optional<Vec3> _scale;             ///< Scale factors.
+    PrimitiveFactory &_factory;                        ///< Factory for creating primitives.
+    std::string _type;                                 ///< Primitive type identifier.
+    std::shared_ptr<IMaterial> _material;              ///< Material for the primitive.
+    std::optional<Vec3> _translation;                  ///< Translation vector.
+    std::optional<Vec3> _rotation;                     ///< Rotation angles.
+    std::optional<Vec3> _scale;                        ///< Scale factors.
+    std::unordered_map<std::string, double> _params;   ///< Geometry parameters for configure().
 };
 
 #endif /* PRIMITIVEBUILDER_HPP_ */
