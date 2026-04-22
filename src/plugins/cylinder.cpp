@@ -32,12 +32,13 @@ public:
         Vec3 vecOCPrime = (ray.origin - _center) - dot(ray.origin - _center, _axis) * _axis;
 
         double a = dot(dPrime, dPrime);
+        if (std::abs(a) < epsilon) return std::nullopt;
         double b = 2.0 * dot(dPrime, vecOCPrime);
         double c = dot(vecOCPrime, vecOCPrime) - _radius * _radius;
-        
+
         double discr = b * b - 4 * a * c;
         if (discr < 0.0) return std::nullopt;
-        
+
         double sqrtDiscr = std::sqrt(discr);
         double t = (-b - sqrtDiscr) / (2 * a);
         if (t < epsilon)
@@ -50,6 +51,7 @@ public:
         bool frontFace = dot(ray.direction, normal) < 0.0;
         if (!frontFace)
             normal = -normal;
+        normal = normalize(normal);
 
         return HitRecord{t, point, normal, _material, frontFace};
     };

@@ -11,6 +11,7 @@
 #include "Renderer.hpp"
 #include "IMaterial.hpp"
 #include "ScatterResult.hpp"
+#include "Common.hpp"
 
 constexpr int MAX_DEPTH = 10;
 
@@ -69,7 +70,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
             continue;
         }
 
-        Ray shadowRay{hit->point + 1e-4 * hit->normal, sample.direction};
+        Ray shadowRay{hit->point + RayBias * hit->normal, sample.direction};
         auto blocker = closestHit(shadowRay, scene);
         if (blocker && blocker->t < sample.distance)
             continue;

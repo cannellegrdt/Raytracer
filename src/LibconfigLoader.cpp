@@ -6,6 +6,7 @@
  */
 
 #include <string>
+#include <iostream>
 #include <libconfig.h++>
 #include <optional>
 #include <functional>
@@ -114,7 +115,10 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
     for (int i=0; i<nbPrimitives; i++) {
         const libconfig::Setting &primitive = primitives[i];
         auto it = mapTablePrim.find(primitive.getName());
-        if (it == mapTablePrim.end()) continue;
+        if (it == mapTablePrim.end()) {
+            std::cerr << "Warning: unknown primitive group '" << primitive.getName() << "', skipping.\n";
+            continue;
+        }
 
         const std::string &factoryKey = it->second;
         const auto &fields = primFields.at(factoryKey);
