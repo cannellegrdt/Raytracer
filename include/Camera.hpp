@@ -16,7 +16,7 @@ class Camera {
 public:
     /// @brief Constructs a camera.
     /// @param position Camera position in world space.
-    /// @param rotation Camera rotation ( Euler angles).
+    /// @param rotation Camera rotation (Euler angles).
     /// @param fov Field of view in degrees.
     /// @param width Image width in pixels.
     /// @param height Image height in pixels.
@@ -27,6 +27,13 @@ public:
     /// @param y Pixel y coordinate.
     /// @return Ray from camera through the pixel.
     Ray generateRay(int x, int y) const;
+
+private:
+    Vec3 _position;    ///< Camera position in world space.
+    Vec3 _rotation;    ///< Camera rotation (Euler angles).
+    double _fov;       ///< Field of view in degrees.
+    int _width;        ///< Image width in pixels.
+    int _height;       ///< Image height in pixels.
 };
 
 #endif /* CAMERA_HPP_ */
