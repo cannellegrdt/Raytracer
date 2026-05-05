@@ -64,3 +64,33 @@ Test(libconfigloader, load_with_transformation_matrix_succeeds) {
 
     cr_assert_no_throw(loader.load(fixturePath("valid_transformation_matrix.cfg"), factory));
 }
+
+Test(libconfigloader, load_with_groups_succeeds) {
+    LibconfigLoader loader;
+    PrimitiveFactory factory;
+    factory.registerType("sphere", []() {
+        return PrimitivePtr(new MockPrimForLoader(), [](IPrimitive *p) { delete p; });
+    });
+
+    cr_assert_no_throw(loader.load(fixturePath("valid_groups.cfg"), factory));
+}
+
+Test(libconfigloader, load_with_nested_groups_succeeds) {
+    LibconfigLoader loader;
+    PrimitiveFactory factory;
+    factory.registerType("sphere", []() {
+        return PrimitivePtr(new MockPrimForLoader(), [](IPrimitive *p) { delete p; });
+    });
+
+    cr_assert_no_throw(loader.load(fixturePath("valid_nested_groups.cfg"), factory));
+}
+
+Test(libconfigloader, load_with_group_translation_succeeds) {
+    LibconfigLoader loader;
+    PrimitiveFactory factory;
+    factory.registerType("sphere", []() {
+        return PrimitivePtr(new MockPrimForLoader(), [](IPrimitive *p) { delete p; });
+    });
+
+    cr_assert_no_throw(loader.load(fixturePath("valid_group_translation.cfg"), factory));
+}

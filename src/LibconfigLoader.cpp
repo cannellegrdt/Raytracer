@@ -22,6 +22,7 @@
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
+#include "GroupNode.hpp"
 #include "Renderer.hpp"
 #include "Mat4.hpp"
 
@@ -39,6 +40,174 @@ static std::optional<std::reference_wrapper<const libconfig::Setting>> checkValu
     if (cfg.exists(path))
         return std::ref(cfg.lookup(path));
     return std::nullopt;
+}
+
+static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
+    std::string type = mat["type"].c_str();
+    Color color{
+        toDouble(mat["color"]["r"]),
+        toDouble(mat["color"]["g"]),
+        toDouble(mat["color"]["b"])
+    };
+    if (type == "flat")
+        return std::make_shared<FlatColor>(color);
+    if (type == "reflection")
+        return std::make_shared<Reflection>(color);
+    if (type == "transparency")
+        return std::make_shared<Transparency>(color);
+    throw std::runtime_error("Unknown material type: " + type);
+}
+
+static PrimitivePtr applyTransforms(PrimitivePtr p, const libconfig::Setting &elem) {
+    if (elem.exists("scale")) {
+        const libconfig::Setting &s = elem["scale"];
+        p = PrimitivePtr(
+            new ScaleDecorator(std::move(p), Vec3{toDouble(s["x"]), toDouble(s["y"]), toDouble(s["z"])}),
+            &defaultDestroy<ScaleDecorator>
+        );
+    }
+    if (elem.exists("shear")) {
+        const libconfig::Setting &sh = elem["shear"];
+        p = PrimitivePtr(
+            new ShearDecorator(std::move(p),
+                toDouble(sh["sxy"]), toDouble(sh["sxz"]),
+                toDouble(sh["syx"]), toDouble(sh["syz"]),
+                toDouble(sh["szx"]), toDouble(sh["szy"])),
+            &defaultDestroy<ShearDecorator>
+        );
+    }
+    if (elem.exists("rotation")) {
+        const libconfig::Setting &r = elem["rotation"];
+        p = PrimitivePtr(
+            new RotationDecorator(std::move(p), Vec3{toDouble(r["x"]), toDouble(r["y"]), toDouble(r["z"])}),
+            &defaultDestroy<RotationDecorator>
+        );
+    }
+    if (elem.exists("translation")) {
+        const libconfig::Setting &t = elem["translation"];
+        p = PrimitivePtr(
+            new TranslationDecorator(std::move(p), Vec3{toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])}),
+            &defaultDestroy<TranslationDecorator>
+        );
+    }
+    if (elem.exists("transformation_matrix")) {
+        const libconfig::Setting &tm = elem["transformation_matrix"];
+        Mat4 matrix{};
+        for (int row = 0; row < 4; row++)
+            for (int col = 0; col < 4; col++)
+                matrix.m[row][col] = toDouble(tm[row][col]);
+        p = PrimitivePtr(
+            new TransformMatrixDecorator(std::move(p), matrix),
+            &defaultDestroy<TransformMatrixDecorator>
+        );
+    }
+    return p;
+}
+
+static const std::unordered_map<std::string, std::string> kMapTablePrim = {
+    {"spheres", "sphere"},
+    {"planes", "plane"},
+    {"cylinders", "cylinder"},
+    {"limited_cylinders", "limited_cylinder"},
+    {"cones", "cone"},
+    {"limited_cones", "limited_cone"},
+};
+
+static const std::unordered_map<std::string, std::vector<std::string>> kPrimFields = {
+    {"sphere", {"x", "y", "z", "r"}},
+    {"plane", {"x", "y", "z", "nx", "ny", "nz"}},
+    {"cylinder", {"x", "y", "z", "ax", "ay", "az", "r"}},
+    {"limited_cylinder", {"x", "y", "z", "ax", "ay", "az", "r", "h"}},
+    {"cone", {"x", "y", "z", "ax", "ay", "az", "angle"}},
+    {"limited_cone", {"x", "y", "z", "ax", "ay", "az", "angle", "h"}},
+};
+
+static std::vector<PrimitivePtr> parsePrimitivesBlock(
+    const libconfig::Setting &primBlock,
+    PrimitiveBuilder &builder
+) {
+    std::vector<PrimitivePtr> result;
+
+    for (int i = 0; i < primBlock.getLength(); i++) {
+        const libconfig::Setting &section = primBlock[i];
+        std::string sectionName = section.getName();
+
+        if (sectionName == "groups") {
+            for (int j = 0; j < section.getLength(); j++) {
+                const libconfig::Setting &grp = section[j];
+
+                std::vector<PrimitivePtr> children;
+                if (grp.exists("children"))
+                    children = parsePrimitivesBlock(grp["children"], builder);
+
+                PrimitivePtr groupPtr = makeGroup(std::move(children));
+                result.push_back(applyTransforms(std::move(groupPtr), grp));
+            }
+            continue;
+        }
+
+        auto it = kMapTablePrim.find(sectionName);
+        if (it == kMapTablePrim.end()) {
+            std::cerr << "Warning: unknown primitive group '" << sectionName << "', skipping.\n";
+            continue;
+        }
+
+        const std::string &factoryKey = it->second;
+        const auto &fields = kPrimFields.at(factoryKey);
+
+        for (int j = 0; j < section.getLength(); j++) {
+            const libconfig::Setting &elem = section[j];
+
+            std::unordered_map<std::string, double> params;
+            try {
+                for (const auto &field : fields)
+                    params[field] = toDouble(elem[field.c_str()]);
+            } catch (const libconfig::SettingNotFoundException &e) {
+                throw std::runtime_error(std::string("Missing primitive field: ") + e.getPath());
+            }
+
+            std::shared_ptr<IMaterial> material;
+            try {
+                material = buildMaterial(elem["material"]);
+            } catch (const libconfig::SettingNotFoundException &e) {
+                throw std::runtime_error(std::string("Missing material field: ") + e.getPath());
+            }
+
+            builder.setType(factoryKey).setParams(params).setMaterial(material);
+
+            if (elem.exists("transformation_matrix")) {
+                const libconfig::Setting &tm = elem["transformation_matrix"];
+                Mat4 matrix{};
+                for (int row = 0; row < 4; row++)
+                    for (int col = 0; col < 4; col++)
+                        matrix.m[row][col] = toDouble(tm[row][col]);
+                builder.setTransformMatrix(matrix);
+            }
+            if (elem.exists("translation")) {
+                const libconfig::Setting &t = elem["translation"];
+                builder.setTranslation({toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])});
+            }
+            if (elem.exists("rotation")) {
+                const libconfig::Setting &r = elem["rotation"];
+                builder.setRotation({toDouble(r["x"]), toDouble(r["y"]), toDouble(r["z"])});
+            }
+            if (elem.exists("shear")) {
+                const libconfig::Setting &sh = elem["shear"];
+                builder.setShear({toDouble(sh["sxy"]), toDouble(sh["sxz"]),
+                    toDouble(sh["syx"]), toDouble(sh["syz"]),
+                    toDouble(sh["szx"]), toDouble(sh["szy"])});
+            }
+            if (elem.exists("scale")) {
+                const libconfig::Setting &s = elem["scale"];
+                builder.setScale({toDouble(s["x"]), toDouble(s["y"]), toDouble(s["z"])});
+            }
+
+            result.push_back(builder.build());
+            builder.reset();
+        }
+    }
+
+    return result;
 }
 
 SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory &factory) {
@@ -62,15 +231,9 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             " at line " + std::to_string(e.getLine()) + ": " + e.getError());
     }
 
-    std::vector<std::string> requiredKeys = {
-        "primitives",
-        "lights"
-    };
-    
-    for (const auto &key : requiredKeys) {
-        auto setting = checkValues(cfg, key);
-        if (!setting)
-            throw std::runtime_error("Missing key: " + key);
+    for (const auto &key : {"primitives", "lights"}) {
+        if (!checkValues(cfg, key))
+            throw std::runtime_error(std::string("Missing key: ") + key);
     }
 
     std::optional<Camera> cameraOpt;
@@ -97,124 +260,28 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
 
             if (aa.exists("type"))
                 type = static_cast<const char *>(aa["type"]);
-            
+
             if (type == "adaptive" && aa.exists("threshold"))
                 threshold = static_cast<double>(aa["threshold"]);
         }
         antialiasingOpt = Supersampling{samples, type, threshold};
     }
 
-    std::unordered_map<std::string, std::string> mapTablePrim = {
-        {"spheres", "sphere"},
-        {"planes", "plane"},
-        {"cylinders", "cylinder"},
-        {"limited_cylinders", "limited_cylinder"},
-        {"cones", "cone"},
-        {"limited_cones", "limited_cone"},
-    };
-
-    static const std::unordered_map<std::string, std::vector<std::string>> primFields = {
-        {"sphere", {"x", "y", "z", "r"}},
-        {"plane", {"x", "y", "z", "nx", "ny", "nz"}},
-        {"cylinder", {"x", "y", "z", "ax", "ay", "az", "r"}},
-        {"limited_cylinder", {"x", "y", "z", "ax", "ay", "az", "r", "h"}},
-        {"cone", {"x", "y", "z", "ax", "ay", "az", "angle"}},
-        {"limited_cone", {"x", "y", "z", "ax", "ay", "az", "angle", "h"}},
-    };
-
-    auto buildMaterial = [](const libconfig::Setting &mat) -> std::shared_ptr<IMaterial> {
-        std::string type = mat["type"].c_str();
-        Color color{
-            toDouble(mat["color"]["r"]),
-            toDouble(mat["color"]["g"]),
-            toDouble(mat["color"]["b"])
-        };
-
-        if (type == "flat")
-            return std::make_shared<FlatColor>(color);
-        if (type == "reflection")
-            return std::make_shared<Reflection>(color);
-        if (type == "transparency")
-            return std::make_shared<Transparency>(color);
-        throw std::runtime_error("Unknown material type: " + type);
-    };
-
     Scene scene;
     PrimitiveBuilder builder(factory);
 
-    const libconfig::Setting &primitives = cfg.lookup("primitives");
-    int nbPrimitives = primitives.getLength();
-    for (int i=0; i<nbPrimitives; i++) {
-        const libconfig::Setting &primitive = primitives[i];
-        auto it = mapTablePrim.find(primitive.getName());
-        if (it == mapTablePrim.end()) {
-            std::cerr << "Warning: unknown primitive group '" << primitive.getName() << "', skipping.\n";
-            continue;
-        }
-
-        const std::string &factoryKey = it->second;
-        const auto &fields = primFields.at(factoryKey);
-        int nbValues = primitive.getLength();
-
-        for (int j=0; j<nbValues; j++) {
-            const libconfig::Setting &elem = primitive[j];
-
-            std::unordered_map<std::string, double> params;
-            try {
-                for (const auto &field : fields)
-                    params[field] = toDouble(elem[field.c_str()]);
-            } catch (const libconfig::SettingNotFoundException &e) {
-                throw std::runtime_error(std::string("Missing primitive field: ") + e.getPath());
-            }
-
-            std::shared_ptr<IMaterial> material;
-            try {
-                material = buildMaterial(elem["material"]);
-            } catch (const libconfig::SettingNotFoundException &e) {
-                throw std::runtime_error(std::string("Missing material field: ") + e.getPath());
-            }
-            builder.setType(factoryKey).setParams(params).setMaterial(material);
-
-            if (elem.exists("transformation_matrix")) {
-                const libconfig::Setting &tm = elem["transformation_matrix"];
-                Mat4 matrix{};
-                for (int row = 0; row < 4; row++) {
-                    for (int col = 0; col < 4; col++)
-                        matrix.m[row][col] = toDouble(tm[row][col]);
-                }
-                builder.setTransformMatrix(matrix);
-            }
-            if (elem.exists("translation")) {
-                const libconfig::Setting &t = elem["translation"];
-                builder.setTranslation({toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])});
-            }
-            if (elem.exists("rotation")) {
-                const libconfig::Setting &r = elem["rotation"];
-                builder.setRotation({toDouble(r["x"]), toDouble(r["y"]), toDouble(r["z"])});
-            }
-            if (elem.exists("shear")) {
-                const libconfig::Setting &sh = elem["shear"];
-                builder.setShear({toDouble(sh["sxy"]), toDouble(sh["sxz"]), toDouble(sh["syx"]),
-                    toDouble(sh["syz"]), toDouble(sh["szx"]), toDouble(sh["szy"])});
-            }
-            if (elem.exists("scale")) {
-                const libconfig::Setting &s = elem["scale"];
-                builder.setScale({toDouble(s["x"]), toDouble(s["y"]), toDouble(s["z"])});
-            }
-
-            scene.addPrimitive(builder.build());
-            builder.reset();
-        }
-    }
+    auto prims = parsePrimitivesBlock(cfg.lookup("primitives"), builder);
+    for (auto &p : prims)
+        scene.addPrimitive(std::move(p));
 
     const libconfig::Setting &lights = cfg.lookup("lights");
     int nbLights = lights.getLength();
-    for (int i=0; i<nbLights; i++) {
+    for (int i = 0; i < nbLights; i++) {
         const libconfig::Setting &light = lights[i];
         std::string name = light.getName();
         int nbValues = light.getLength();
 
-        for (int j=0; j<nbValues; j++) {
+        for (int j = 0; j < nbValues; j++) {
             const libconfig::Setting &elem = light[j];
 
             Color color{
@@ -239,64 +306,28 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
 
     if (cfg.exists("imports")) {
         const libconfig::Setting &imports = cfg.lookup("imports");
-        for (int i=0; i<imports.getLength(); i++) {
+        for (int i = 0; i < imports.getLength(); i++) {
             const libconfig::Setting &imp = imports[i];
             std::string subFilePath = imp.lookup("path").c_str();
 
             SceneContext importedCtx = load(subFilePath, factory, visited);
 
-            if (!cameraOpt && importedCtx.camera) {
+            if (!cameraOpt && importedCtx.camera)
                 cameraOpt = importedCtx.camera;
-            }
 
             auto &importedPrims = importedCtx.scene.primitives();
-            auto &importedLights = importedCtx.scene.lights();
-
-            for (auto &prim : importedPrims) {
-                PrimitivePtr p = std::move(prim);
-                if (imp.exists("scale")) {
-                    const libconfig::Setting &s = imp["scale"];
-                    p = PrimitivePtr(new ScaleDecorator(std::move(p), Vec3{toDouble(s["x"]), toDouble(s["y"]), toDouble(s["z"])}), p.get_deleter());
-                }
-                if (imp.exists("shear")) {
-                    const libconfig::Setting &s = imp["shear"];
-                    auto deleter = p.get_deleter();
-                    p = PrimitivePtr(new ShearDecorator(std::move(p),
-                        toDouble(s["sxy"]), toDouble(s["sxz"]),
-                        toDouble(s["syx"]), toDouble(s["syz"]),
-                        toDouble(s["szx"]), toDouble(s["szy"])), deleter);
-                }
-                if (imp.exists("rotation")) {
-                    const libconfig::Setting &r = imp["rotation"];
-                    p = PrimitivePtr(new RotationDecorator(std::move(p), Vec3{toDouble(r["x"]), toDouble(r["y"]), toDouble(r["z"])}), p.get_deleter());
-                }
-                if (imp.exists("translation")) {
-                    const libconfig::Setting &t = imp["translation"];
-                    p = PrimitivePtr(new TranslationDecorator(std::move(p), Vec3{toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])}), p.get_deleter());
-                }
-                if (imp.exists("transformation_matrix")) {
-                    const libconfig::Setting &tm = imp["transformation_matrix"];
-                    Mat4 matrix{};
-                    for (int row = 0; row < 4; row++) {
-                        for (int col = 0; col < 4; col++) {
-                            matrix.m[row][col] = toDouble(tm[row][col]);
-                        }
-                    }
-                    p = PrimitivePtr(new TransformMatrixDecorator(std::move(p), matrix), p.get_deleter());
-                }
-                scene.addPrimitive(std::move(p));
-            }
+            for (auto &prim : importedPrims)
+                scene.addPrimitive(applyTransforms(std::move(prim), imp));
             importedPrims.clear();
-            
-            for (auto &light : importedLights) {
+
+            auto &importedLights = importedCtx.scene.lights();
+            for (auto &light : importedLights)
                 scene.addLight(std::move(light));
-            }
             importedLights.clear();
         }
     }
 
-    if (!cameraOpt) {
+    if (!cameraOpt)
         throw std::runtime_error("No camera found in the configuration files");
-    }
     return SceneContext{std::move(scene), cameraOpt, antialiasingOpt};
 }
