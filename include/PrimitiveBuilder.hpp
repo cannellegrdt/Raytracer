@@ -12,6 +12,16 @@
     #include "Type.hpp"
     #include "Factory.hpp"
 
+/// @brief Structure to hold shear factors
+struct ShearFactors {
+    double sxy = 0.0;  ///< Shear X by Y
+    double sxz = 0.0;  ///< Shear X by Z
+    double syx = 0.0;  ///< Shear Y by X
+    double syz = 0.0;  ///< Shear Y by Z
+    double szx = 0.0;  ///< Shear Z by X
+    double szy = 0.0;  ///< Shear Z by Y
+};
+
 /// @brief Builder for constructing primitives with decorators.
 /// @details Provides a fluent API to set primitive type, material, and optional
 /// transforms (translation, rotation, scale) before building.
@@ -46,6 +56,11 @@ public:
     /// @return Reference to this builder for chaining.
     PrimitiveBuilder &setScale(const Vec3 &s);
 
+    /// @brief Sets the shear decorator.
+    /// @param shear Shear factors structure.
+    /// @return Reference to this builder for chaining.
+    PrimitiveBuilder &setShear(const ShearFactors &shear);
+
     /// @brief Sets the geometry parameters passed to configure().
     /// @param params Map of parameter names to values (e.g. {"x",0}, {"r",1}).
     /// @return Reference to this builder for chaining.
@@ -65,6 +80,7 @@ private:
     std::optional<Vec3> _translation;                  ///< Translation vector.
     std::optional<Vec3> _rotation;                     ///< Rotation angles.
     std::optional<Vec3> _scale;                        ///< Scale factors.
+    std::optional<ShearFactors> _shear;                ///< Shear factors.
     std::unordered_map<std::string, double> _params;   ///< Geometry parameters for configure().
 };
 

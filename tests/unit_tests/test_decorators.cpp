@@ -224,3 +224,59 @@ Test(scale, configure_delegates_to_inner) {
     ScaleDecorator sd(makeStub(stub), {1, 1, 1});
     cr_assert_no_throw(sd.configure({}, nullptr));
 }
+
+Test(shear, miss_propagates_as_nullopt) {
+    StubPrimitive *stub;
+    ShearDecorator sd(makeStub(stub), 0.5, 0.0, 0.0, 0.0, 0.0, 0.0);
+    stub->result = std::nullopt;
+
+    cr_assert_not(sd.intersect(Ray{{0,0,0},{0,0,-1}}).has_value());
+}
+
+Test(shear, identity_shear_leaves_hit_unchanged) {
+    StubPrimitive *stub;
+    ShearDecorator sd(makeStub(stub), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    stub->result = makeHit(2.0, {1, 2, 3}, {0, 1, 0});
+
+    auto hit = sd.intersect(Ray{{0,0,0},{0,0,-1}});
+    cr_assert(hit.has_value());
+    cr_assert(vec3_near(hit->point, {1, 2, 3}));
+    cr_assert(vec3_near(hit->normal, {0, 1, 0}));
+}
+
+Test(shear, shear_x_by_y_transforms_point) {
+    StubPrimitive *stub;
+    ShearDecorator sd(makeStub(stub), 0.5, 0.0, 0.0, 0.0, 0.0, 0.0);
+    stub->result = makeHit(1.0, {2, 4, 0}, {0, 1, 0});
+
+    auto hit = sd.intersect(Ray{{0,0,0},{0,0,-1}});
+    cr_assert(hit.has_value());
+    cr_assert(vec3_near(hit->point, {4, 4, 0}));
+}
+
+Test(shear, shear_x_by_y_transforms_normal_correctly) {
+    StubPrimitive *stub;
+    ShearDecorator sd(makeStub(stub), 1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    stub->result = makeHit(1.0, {0, 0, 0}, {1, 0, 0});
+
+    auto hit = sd.intersect(Ray{{0,0,0},{0,0,-1}});
+    cr_assert(hit.has_value());
+    Vec3 expected = normalize({1, -1, 0});
+    cr_assert(vec3_near(hit->normal, expected));
+    cr_assert(near(length(hit->normal), 1.0));
+}
+
+Test(shear, ray_origin_transformed_by_inverse_shear) {
+    StubPrimitive *stub;
+    ShearDecorator sd(makeStub(stub), 2.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    stub->result = std::nullopt;
+
+    sd.intersect(Ray{{0, 3, 0},{0,0,-1}});
+    cr_assert(vec3_near(stub->lastRay.origin, {-6, 3, 0}));
+}
+
+Test(shear, configure_delegates_to_inner) {
+    StubPrimitive *stub;
+    ShearDecorator sd(makeStub(stub), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    cr_assert_no_throw(sd.configure({}, nullptr));
+}

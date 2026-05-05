@@ -182,6 +182,11 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
                 const libconfig::Setting &r = elem["rotation"];
                 builder.setRotation({toDouble(r["x"]), toDouble(r["y"]), toDouble(r["z"])});
             }
+            if (elem.exists("shear")) {
+                const libconfig::Setting &sh = elem["shear"];
+                builder.setShear({toDouble(sh["sxy"]), toDouble(sh["sxz"]), toDouble(sh["syx"]),
+                    toDouble(sh["syz"]), toDouble(sh["szx"]), toDouble(sh["szy"])});
+            }
             if (elem.exists("scale")) {
                 const libconfig::Setting &s = elem["scale"];
                 builder.setScale({toDouble(s["x"]), toDouble(s["y"]), toDouble(s["z"])});
@@ -240,12 +245,20 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             for (auto &prim : importedPrims) {
                 PrimitivePtr p = std::move(prim);
                 if (imp.exists("scale")) {
-                    const libconfig::Setting &t = imp["scale"];
-                    p = PrimitivePtr(new ScaleDecorator(std::move(p), Vec3{toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])}), p.get_deleter());
+                    const libconfig::Setting &s = imp["scale"];
+                    p = PrimitivePtr(new ScaleDecorator(std::move(p), Vec3{toDouble(s["x"]), toDouble(s["y"]), toDouble(s["z"])}), p.get_deleter());
+                }
+                if (imp.exists("shear")) {
+                    const libconfig::Setting &s = imp["shear"];
+                    auto deleter = p.get_deleter();
+                    p = PrimitivePtr(new ShearDecorator(std::move(p),
+                        toDouble(s["sxy"]), toDouble(s["sxz"]),
+                        toDouble(s["syx"]), toDouble(s["syz"]),
+                        toDouble(s["szx"]), toDouble(s["szy"])), deleter);
                 }
                 if (imp.exists("rotation")) {
-                    const libconfig::Setting &t = imp["rotation"];
-                    p = PrimitivePtr(new RotationDecorator(std::move(p), Vec3{toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])}), p.get_deleter());
+                    const libconfig::Setting &r = imp["rotation"];
+                    p = PrimitivePtr(new RotationDecorator(std::move(p), Vec3{toDouble(r["x"]), toDouble(r["y"]), toDouble(r["z"])}), p.get_deleter());
                 }
                 if (imp.exists("translation")) {
                     const libconfig::Setting &t = imp["translation"];

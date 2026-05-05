@@ -57,4 +57,21 @@ private:
     Vec3 _scale;           ///< Scale factors.
 };
 
+/// @brief Decorator that shear a primitive around a center point.
+class ShearDecorator : public IPrimitive {
+public:
+    /// @brief Constructs a shear decorator.
+    /// @param inner Primitive to wrap.
+    /// @param sxy, sxz, syx, syz, szx, szy Shear factors
+    ShearDecorator(PrimitivePtr inner, double sxy, double sxz, double syx, double syz, double szx, double szy);
+    void configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) override;
+    std::optional<HitRecord> intersect(const Ray &ray) const override;
+
+private:
+    PrimitivePtr _inner;      ///< Wrapped primitive.
+    Mat3 _shear;              ///< Shear matrix.
+    Mat3 _invShear;           ///< Inverse shear matrix.
+    Mat3 _invShearTransposed; ///< Transposed inverse shear matrix.
+};
+
 #endif /* DECORATORS_HPP_ */

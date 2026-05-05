@@ -46,6 +46,34 @@ struct Mat3 {
             {m[0][2], m[1][2], m[2][2]}
         }};
     }
+
+    Mat3 inverse() const {
+        double det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
+                     m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+                     m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+        if (std::abs(det) < 1e-9)
+            throw std::runtime_error("Matrix is singular and cannot be inverted.");
+        
+        double invDet = 1.0 / det;
+
+        return Mat3{{
+            {
+                (m[1][1] * m[2][2] - m[1][2] * m[2][1]) * invDet,
+                (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * invDet,
+                (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * invDet
+            },
+            {
+                (m[1][2] * m[2][0] - m[1][0] * m[2][2]) * invDet,
+                (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * invDet,
+                (m[0][2] * m[1][0] - m[0][0] * m[1][2]) * invDet
+            },
+            {
+                (m[1][0] * m[2][1] - m[1][1] * m[2][0]) * invDet,
+                (m[0][1] * m[2][0] - m[0][0] * m[2][1]) * invDet,
+                (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * invDet
+            }
+        }};
+    }
 };
 
 /// @brief Creates a rotation matrix around the X-axis.
@@ -84,6 +112,22 @@ inline Mat3 rotateZ(double theta) {
         {c, -s, 0},
         {s, c, 0},
         {0, 0, 1}
+    }};
+}
+
+/// @brief Creates a shear matrix.
+/// @param sxy Shear X by Y
+/// @param sxz Shear X by Z
+/// @param syx Shear Y by X
+/// @param syz Shear Y by Z
+/// @param szx Shear Z by X
+/// @param szy Shear Z by Y
+/// @return Shear matrix.
+inline Mat3 shearMatrix(double sxy, double sxz, double syx, double syz, double szx, double szy) {
+    return Mat3{{
+        {1, sxy, sxz},
+        {syx, 1, syz},
+        {szx, szy, 1}
     }};
 }
 

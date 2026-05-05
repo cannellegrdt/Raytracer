@@ -70,3 +70,24 @@ std::optional<HitRecord> ScaleDecorator::intersect(const Ray &ray) const {
     return HitRecord{hit->t, worldPoint, worldNormal, hit->material, hit->frontFace};
 }
 
+ShearDecorator::ShearDecorator(PrimitivePtr inner, double sxy, double sxz, double syx, double syz, double szx, double szy)
+    : _inner(std::move(inner)) {
+    _shear = shearMatrix(sxy, sxz, syx, syz, szx, szy);
+    _invShear = _shear.inverse();
+    _invShearTransposed = _invShear.transpose();
+}
+
+void ShearDecorator::configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) {
+    _inner->configure(params, std::move(mat));
+}
+
+std::optional<HitRecord> ShearDecorator::intersect(const Ray &ray) const {
+    Ray localRay = {_invShear * ray.origin, _invShear * ray.direction};
+
+    std::optional<HitRecord> hit = _inner->intersect(localRay);
+    if (hit == std::nullopt) return std::nullopt;
+
+    hit->point = _shear * hit->point;
+    hit->normal = normalize(_invShearTransposed * hit->normal);
+    return hit;
+}

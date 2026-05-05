@@ -35,6 +35,11 @@ PrimitiveBuilder &PrimitiveBuilder::setScale(const Vec3 &s) {
     return *this;
 }
 
+PrimitiveBuilder &PrimitiveBuilder::setShear(const ShearFactors &s) {
+    _shear = s;
+    return *this;
+}
+
 PrimitiveBuilder &PrimitiveBuilder::setParams(const std::unordered_map<std::string, double> &params) {
     _params = params;
     return *this;
@@ -46,6 +51,7 @@ void PrimitiveBuilder::reset() {
     _translation.reset();
     _rotation.reset();
     _scale.reset();
+    _shear.reset();
     _params.clear();
 }
 
@@ -65,6 +71,14 @@ PrimitivePtr PrimitiveBuilder::build() {
             new ScaleDecorator(std::move(primitive), _scale.value()),
             &defaultDestroy<ScaleDecorator>
         );
+    if (_shear) {
+        primitive = PrimitivePtr(
+            new ShearDecorator(std::move(primitive),
+                _shear->sxy, _shear->sxz, _shear->syx,
+                _shear->syz, _shear->szx, _shear->szy),
+            &defaultDestroy<ShearDecorator>
+        );
+    }
     if (_rotation)
         primitive = PrimitivePtr(
             new RotationDecorator(std::move(primitive), _rotation.value()),
