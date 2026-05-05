@@ -11,10 +11,15 @@
     #include "Scene.hpp"
     #include "Camera.hpp"
 
+struct Supersampling {
+    int nbSamples;
+};
+
 /// @brief Complete render context containing scene and camera.
 struct SceneContext {
-    Scene scene;   ///< Scene with all primitives and lights.
-    std::optional<Camera> camera; ///< Camera for rendering, optional to allow inheritance from imports.
+    Scene scene;                               ///< Scene with all primitives and lights.
+    std::optional<Camera> camera;              ///< Camera for rendering, optional to allow inheritance from imports.
+    std::optional<Supersampling> antialiasing; ///< Supersampling to enable antialiasing.
 };
 
 #endif /* SCENECONTEXT_HPP_ */

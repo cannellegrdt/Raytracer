@@ -26,7 +26,7 @@ public:
     /// @param x Pixel x coordinate.
     /// @param y Pixel y coordinate.
     /// @return Ray from camera through the pixel.
-    Ray generateRay(int x, int y) const;
+    Ray generateRay(double x, double y) const;
 
     /// @brief Gets the image width.
     /// @return Image width in pixels.

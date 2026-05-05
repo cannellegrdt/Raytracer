@@ -22,7 +22,7 @@ Camera::Camera(Vec3 position, Vec3 rotation, double fov, int width, int height)
             std::to_string(fov) + ")");
 }
 
-Ray Camera::generateRay(int x, int y) const {
+Ray Camera::generateRay(double x, double y) const {
     double toRad = M_PI / 180;
     double halfHeight = tan(_fov / 2 * toRad);
     double halfWidth = halfHeight * (static_cast<double>(_width) / _height);

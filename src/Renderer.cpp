@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <cmath>
 #include "Renderer.hpp"
 #include "IMaterial.hpp"
 #include "ScatterResult.hpp"
@@ -36,6 +37,8 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
     int width = cam.getWidth();
     int height = cam.getHeight();
 
+    int samples = (context.antialiasing) ? context.antialiasing->nbSamples : 1;
+
     std::ofstream outFile(outputPath);
     if (!outFile)
         throw std::runtime_error("Error: cannot open output file '" + outputPath + "'");
@@ -44,8 +47,21 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
 
     for (int y=0; y<height; y++) {
         for (int x=0; x<width; x++) {
-            Ray ray = cam.generateRay(x, y);
-            Color pixelColor = traceRay(ray, context.scene, MAX_DEPTH);
+            Color pixelColor{0, 0, 0};
+
+            for (int j=0; j<samples; j++) {
+                for (int i=0; i<samples; i++) {
+                    double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
+                    double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
+
+                    Ray ray = cam.generateRay(u, v);
+                    pixelColor = pixelColor + traceRay(ray, context.scene, MAX_DEPTH);
+                }
+            }
+            
+            double invSamplesSquared = 1.0 / (samples * samples);
+            pixelColor = pixelColor * invSamplesSquared;
+            
             outFile << toPPMByte(pixelColor.x) << ' '
                       << toPPMByte(pixelColor.y) << ' '
                       << toPPMByte(pixelColor.z) << '\n';

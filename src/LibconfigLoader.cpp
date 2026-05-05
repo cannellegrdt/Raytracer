@@ -22,6 +22,7 @@
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
+#include "Renderer.hpp"
 
 static double toDouble(const libconfig::Setting &s) {
     if (s.getType() == libconfig::Setting::TypeInt)
@@ -80,6 +81,13 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
         int width = cam["resolution"]["width"];
         int height = cam["resolution"]["height"];
         cameraOpt = Camera{position, rotation, fov, width, height};
+    }
+
+    std::optional<Supersampling> antialiasingOpt;
+    if (cfg.exists("renderer")) {
+        const libconfig::Setting &alias = cfg.lookup("renderer");
+        int samples = alias["antialiasing"]["samples"];
+        antialiasingOpt = Supersampling{samples};
     }
 
     std::unordered_map<std::string, std::string> mapTablePrim = {
@@ -244,5 +252,5 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
     if (!cameraOpt) {
         throw std::runtime_error("No camera found in the configuration files");
     }
-    return SceneContext{std::move(scene), cameraOpt};
+    return SceneContext{std::move(scene), cameraOpt, antialiasingOpt};
 }
