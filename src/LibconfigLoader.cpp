@@ -23,6 +23,7 @@
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
 #include "Renderer.hpp"
+#include "Mat4.hpp"
 
 static double toDouble(const libconfig::Setting &s) {
     if (s.getType() == libconfig::Setting::TypeInt)
@@ -174,6 +175,15 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             }
             builder.setType(factoryKey).setParams(params).setMaterial(material);
 
+            if (elem.exists("transformation_matrix")) {
+                const libconfig::Setting &tm = elem["transformation_matrix"];
+                Mat4 matrix{};
+                for (int row = 0; row < 4; row++) {
+                    for (int col = 0; col < 4; col++)
+                        matrix.m[row][col] = toDouble(tm[row][col]);
+                }
+                builder.setTransformMatrix(matrix);
+            }
             if (elem.exists("translation")) {
                 const libconfig::Setting &t = elem["translation"];
                 builder.setTranslation({toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])});
@@ -263,6 +273,16 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
                 if (imp.exists("translation")) {
                     const libconfig::Setting &t = imp["translation"];
                     p = PrimitivePtr(new TranslationDecorator(std::move(p), Vec3{toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])}), p.get_deleter());
+                }
+                if (imp.exists("transformation_matrix")) {
+                    const libconfig::Setting &tm = imp["transformation_matrix"];
+                    Mat4 matrix{};
+                    for (int row = 0; row < 4; row++) {
+                        for (int col = 0; col < 4; col++) {
+                            matrix.m[row][col] = toDouble(tm[row][col]);
+                        }
+                    }
+                    p = PrimitivePtr(new TransformMatrixDecorator(std::move(p), matrix), p.get_deleter());
                 }
                 scene.addPrimitive(std::move(p));
             }

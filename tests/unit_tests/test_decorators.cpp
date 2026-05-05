@@ -1,10 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_decorators.cpp
- * Description: Criterion unit tests for TranslationDecorator, RotationDecorator, ScaleDecorator.
- *
- * A StubPrimitive is defined inline to control what the wrapped primitive returns, letting each
- * decorator be tested in isolation without depending on a real shape implementation.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for TranslationDecorator, RotationDecorator, ScaleDecorator.
  */
 
 #include <criterion/criterion.h>
@@ -279,4 +277,87 @@ Test(shear, configure_delegates_to_inner) {
     StubPrimitive *stub;
     ShearDecorator sd(makeStub(stub), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     cr_assert_no_throw(sd.configure({}, nullptr));
+}
+
+Test(transform_matrix, miss_propagates_as_nullopt) {
+    StubPrimitive *stub;
+    Mat4 identity = identity4();
+    TransformMatrixDecorator td(makeStub(stub), identity);
+    stub->result = std::nullopt;
+
+    cr_assert_not(td.intersect(Ray{{0,0,0},{0,0,-1}}).has_value());
+}
+
+Test(transform_matrix, identity_leaves_hit_unchanged) {
+    StubPrimitive *stub;
+    Mat4 identity = identity4();
+    TransformMatrixDecorator td(makeStub(stub), identity);
+    stub->result = makeHit(2.0, {1, 2, 3}, {0, 1, 0});
+
+    auto hit = td.intersect(Ray{{0,0,0},{0,0,-1}});
+    cr_assert(hit.has_value());
+    cr_assert(vec3_near(hit->point, {1, 2, 3}));
+    cr_assert(vec3_near(hit->normal, {0, 1, 0}));
+}
+
+Test(transform_matrix, translation_moves_hit_point) {
+    StubPrimitive *stub;
+    Mat4 tm = translate(2.0, 0.0, 0.0);
+    TransformMatrixDecorator td(makeStub(stub), tm);
+    stub->result = makeHit(1.0, {0, 0, 0}, {0, 1, 0});
+
+    auto hit = td.intersect(Ray{{0,0,0},{0,0,-1}});
+    cr_assert(hit.has_value());
+    cr_assert(vec3_near(hit->point, {2, 0, 0}));
+}
+
+Test(transform_matrix, ray_transformed_by_inverse_matrix) {
+    StubPrimitive *stub;
+    Mat4 tm = translate(3.0, 0.0, 0.0);
+    TransformMatrixDecorator td(makeStub(stub), tm);
+    stub->result = std::nullopt;
+
+    td.intersect(Ray{{3, 0, 0},{0,0,-1}});
+    cr_assert(vec3_near(stub->lastRay.origin, {0, 0, 0}));
+}
+
+Test(transform_matrix, normal_transformed_by_inverse_transpose) {
+    StubPrimitive *stub;
+    Mat4 tm = scale(2.0, 1.0, 1.0);
+    TransformMatrixDecorator td(makeStub(stub), tm);
+    stub->result = makeHit(1.0, {0, 0, 0}, {1, 0, 0});
+
+    auto hit = td.intersect(Ray{{0,0,0},{0,0,-1}});
+    cr_assert(hit.has_value());
+    cr_assert(near(length(hit->normal), 1.0));
+    cr_assert(vec3_near(hit->normal, {1, 0, 0}));
+}
+
+Test(transform_matrix, rotateZ_90_maps_normal) {
+    StubPrimitive *stub;
+    Mat4 tm = rotateZ4(M_PI / 2.0);
+    TransformMatrixDecorator td(makeStub(stub), tm);
+    stub->result = makeHit(1.0, {1, 0, 0}, {0, 1, 0});
+
+    auto hit = td.intersect(Ray{{0,0,0},{0,0,-1}});
+    cr_assert(hit.has_value());
+    cr_assert(near(length(hit->normal), 1.0));
+}
+
+Test(transform_matrix, t_value_preserved) {
+    StubPrimitive *stub;
+    Mat4 tm = translate(1.0, 2.0, 3.0);
+    TransformMatrixDecorator td(makeStub(stub), tm);
+    stub->result = makeHit(5.0, {0, 0, 0}, {0, 1, 0});
+
+    auto hit = td.intersect(Ray{{0,0,0},{0,0,-1}});
+    cr_assert(hit.has_value());
+    cr_assert(near(hit->t, 5.0));
+}
+
+Test(transform_matrix, configure_delegates_to_inner) {
+    StubPrimitive *stub;
+    Mat4 identity = identity4();
+    TransformMatrixDecorator td(makeStub(stub), identity);
+    cr_assert_no_throw(td.configure({}, nullptr));
 }

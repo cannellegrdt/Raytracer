@@ -40,6 +40,11 @@ PrimitiveBuilder &PrimitiveBuilder::setShear(const ShearFactors &s) {
     return *this;
 }
 
+PrimitiveBuilder &PrimitiveBuilder::setTransformMatrix(const Mat4 &m) {
+    _transformMatrix = m;
+    return *this;
+}
+
 PrimitiveBuilder &PrimitiveBuilder::setParams(const std::unordered_map<std::string, double> &params) {
     _params = params;
     return *this;
@@ -52,6 +57,7 @@ void PrimitiveBuilder::reset() {
     _rotation.reset();
     _scale.reset();
     _shear.reset();
+    _transformMatrix.reset();
     _params.clear();
 }
 
@@ -71,14 +77,13 @@ PrimitivePtr PrimitiveBuilder::build() {
             new ScaleDecorator(std::move(primitive), _scale.value()),
             &defaultDestroy<ScaleDecorator>
         );
-    if (_shear) {
+    if (_shear)
         primitive = PrimitivePtr(
             new ShearDecorator(std::move(primitive),
                 _shear->sxy, _shear->sxz, _shear->syx,
                 _shear->syz, _shear->szx, _shear->szy),
             &defaultDestroy<ShearDecorator>
         );
-    }
     if (_rotation)
         primitive = PrimitivePtr(
             new RotationDecorator(std::move(primitive), _rotation.value()),
@@ -88,6 +93,11 @@ PrimitivePtr PrimitiveBuilder::build() {
         primitive = PrimitivePtr(
             new TranslationDecorator(std::move(primitive), _translation.value()),
             &defaultDestroy<TranslationDecorator>
+        );
+    if (_transformMatrix)
+        primitive = PrimitivePtr(
+            new TransformMatrixDecorator(std::move(primitive), _transformMatrix.value()),
+            &defaultDestroy<RotationDecorator>
         );
     
     return primitive;

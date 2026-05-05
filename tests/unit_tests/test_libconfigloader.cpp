@@ -1,13 +1,20 @@
 /*
  * Project: Raytracer
  * File name: test_libconfigloader.cpp
- * Description: Criterion unit tests for LibconfigLoader - error handling tests.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for LibconfigLoader - error handling tests.
  */
 
 #include <criterion/criterion.h>
 #include <string>
 #include "LibconfigLoader.hpp"
 #include "Factory.hpp"
+#include "Type.hpp"
+
+struct MockPrimForLoader : IPrimitive {
+    std::optional<HitRecord> intersect(const Ray &) const override { return std::nullopt; }
+    void configure(const std::unordered_map<std::string, double> &, std::shared_ptr<IMaterial>) override {}
+};
 
 namespace {
 
@@ -46,4 +53,14 @@ Test(libconfigloader, nonexistent_file_error_contains_filename) {
     } catch (const std::runtime_error &e) {
         cr_assert_str_neq(e.what(), "");
     }
+}
+
+Test(libconfigloader, load_with_transformation_matrix_succeeds) {
+    LibconfigLoader loader;
+    PrimitiveFactory factory;
+    factory.registerType("sphere", []() {
+        return PrimitivePtr(new MockPrimForLoader(), [](IPrimitive *p) { delete p; });
+    });
+
+    cr_assert_no_throw(loader.load(fixturePath("valid_transformation_matrix.cfg"), factory));
 }

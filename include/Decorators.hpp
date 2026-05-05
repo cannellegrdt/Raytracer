@@ -9,6 +9,7 @@
     #define DECORATORS_HPP_
     #include "Type.hpp"
     #include "Mat3.hpp"
+    #include "Mat4.hpp"
 
 /// @brief Decorator that translates a primitive by a fixed offset.
 class TranslationDecorator : public IPrimitive {
@@ -72,6 +73,22 @@ private:
     Mat3 _shear;              ///< Shear matrix.
     Mat3 _invShear;           ///< Inverse shear matrix.
     Mat3 _invShearTransposed; ///< Transposed inverse shear matrix.
+};
+
+/// @brief Decorator that transform a primitive with a 4x4 matrix.
+class TransformMatrixDecorator : public IPrimitive {
+public:
+    /// @brief Constructs a matrix decorator.
+    /// @param inner Primitive to wrap.
+    /// @param matrix Shear factors
+    TransformMatrixDecorator(PrimitivePtr inner, Mat4 matrix);
+    void configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) override;
+    std::optional<HitRecord> intersect(const Ray &ray) const override;
+
+private:
+    PrimitivePtr _inner;   ///< Wrapped primitive.
+    Mat4 _transformMatrix; ///< Matrix world->local
+    Mat4 _invMatrix;       ///< Inverse matrix.
 };
 
 #endif /* DECORATORS_HPP_ */

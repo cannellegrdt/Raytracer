@@ -11,6 +11,7 @@
     #include <string>
     #include "Type.hpp"
     #include "Factory.hpp"
+    #include "Mat4.hpp"
 
 /// @brief Structure to hold shear factors
 struct ShearFactors {
@@ -57,9 +58,14 @@ public:
     PrimitiveBuilder &setScale(const Vec3 &s);
 
     /// @brief Sets the shear decorator.
-    /// @param shear Shear factors structure.
+    /// @param s Shear factors structure.
     /// @return Reference to this builder for chaining.
-    PrimitiveBuilder &setShear(const ShearFactors &shear);
+    PrimitiveBuilder &setShear(const ShearFactors &s);
+
+    /// @brief Sets the transform matrix decorator.
+    /// @param m Matrix.
+    /// @return Reference to this builder for chaining.
+    PrimitiveBuilder &setTransformMatrix(const Mat4 &m);
 
     /// @brief Sets the geometry parameters passed to configure().
     /// @param params Map of parameter names to values (e.g. {"x",0}, {"r",1}).
@@ -81,6 +87,7 @@ private:
     std::optional<Vec3> _rotation;                     ///< Rotation angles.
     std::optional<Vec3> _scale;                        ///< Scale factors.
     std::optional<ShearFactors> _shear;                ///< Shear factors.
+    std::optional<Mat4> _transformMatrix;              ///< 4x4 matrix.
     std::unordered_map<std::string, double> _params;   ///< Geometry parameters for configure().
 };
 

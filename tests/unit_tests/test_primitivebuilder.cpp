@@ -1,13 +1,15 @@
 /*
  * Project: Raytracer
  * File name: test_primitivebuilder.cpp
- * Description: Criterion unit tests for PrimitiveBuilder - fluent API, decorators, build validation.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for PrimitiveBuilder - fluent API, decorators, build validation.
  */
 
 #include <criterion/criterion.h>
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
 #include "Factory.hpp"
+#include "Mat4.hpp"
 
 class MockPrimitive : public IPrimitive {
 public:
@@ -114,7 +116,6 @@ Test(primitivebuilder, multiple_decorators_stacked) {
     auto result = builder.build();
     cr_assert_not_null(result.get());
 
-    // TRS order: Translation is outermost (applied last in world space)
     auto *translation = dynamic_cast<TranslationDecorator *>(result.get());
     cr_assert_not_null(translation);
 
@@ -149,5 +150,32 @@ Test(primitivebuilder, fluent_api_chaining) {
         .setScale(Vec3(2.0, 2.0, 2.0))
         .build();
 
+    cr_assert_not_null(result.get());
+}
+
+Test(primitivebuilder, set_transform_matrix_wraps_with_decorator) {
+    TestFactory tf;
+    PrimitiveBuilder builder(tf);
+    builder.setType("mock");
+    Mat4 m = translate(1.0, 2.0, 3.0);
+    builder.setTransformMatrix(m);
+
+    auto result = builder.build();
+    cr_assert_not_null(result.get());
+
+    auto *decorator = dynamic_cast<TransformMatrixDecorator *>(result.get());
+    cr_assert_not_null(decorator);
+}
+
+Test(primitivebuilder, transform_matrix_with_other_decorators) {
+    TestFactory tf;
+    PrimitiveBuilder builder(tf);
+    builder.setType("mock");
+    builder.setTranslation(Vec3(1.0, 0.0, 0.0));
+    builder.setRotation(Vec3(0.0, 0.5, 0.0));
+    Mat4 m = scale(2.0, 2.0, 2.0);
+    builder.setTransformMatrix(m);
+
+    auto result = builder.build();
     cr_assert_not_null(result.get());
 }

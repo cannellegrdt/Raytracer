@@ -91,3 +91,31 @@ std::optional<HitRecord> ShearDecorator::intersect(const Ray &ray) const {
     hit->normal = normalize(_invShearTransposed * hit->normal);
     return hit;
 }
+
+TransformMatrixDecorator::TransformMatrixDecorator(PrimitivePtr inner, Mat4 matrix)
+    : _inner(std::move(inner)) {
+    _transformMatrix = matrix;
+    _invMatrix = _transformMatrix.inverse();
+}
+
+void TransformMatrixDecorator::configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) {
+    _inner->configure(params, std::move(mat));
+}
+
+std::optional<HitRecord> TransformMatrixDecorator::intersect(const Ray &ray) const {
+    Ray localRay = {transformPoint(_invMatrix, ray.origin), transformDirection(_invMatrix, ray.direction)};
+
+    std::optional<HitRecord> hit = _inner->intersect(localRay);
+    if (hit == std::nullopt) return std::nullopt;
+
+    hit->point = transformPoint(_transformMatrix, hit->point);
+
+    Mat3 inv3x3 = {{
+        {_invMatrix.m[0][0], _invMatrix.m[0][1], _invMatrix.m[0][2]},
+        {_invMatrix.m[1][0], _invMatrix.m[1][1], _invMatrix.m[1][2]},
+        {_invMatrix.m[2][0], _invMatrix.m[2][1], _invMatrix.m[2][2]}
+    }};
+    Mat3 invTrans3x3 = inv3x3.transpose();
+    hit->normal = normalize(invTrans3x3 * hit->normal);
+    return hit;
+}
