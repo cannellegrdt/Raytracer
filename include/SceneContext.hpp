@@ -7,13 +7,14 @@
 
 #ifndef SCENECONTEXT_HPP_
     #define SCENECONTEXT_HPP_
+    #include <optional>
     #include "Scene.hpp"
     #include "Camera.hpp"
 
 /// @brief Complete render context containing scene and camera.
 struct SceneContext {
     Scene scene;   ///< Scene with all primitives and lights.
-    Camera camera; ///< Camera for rendering.
+    std::optional<Camera> camera; ///< Camera for rendering, optional to allow inheritance from imports.
 };
 
 #endif /* SCENECONTEXT_HPP_ */

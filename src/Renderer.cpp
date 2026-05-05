@@ -30,19 +30,21 @@ std::optional<HitRecord> Renderer::closestHit(const Ray &ray, const Scene &scene
 }
 
 void Renderer::render(const SceneContext &context, const std::string &outputPath) {
-    int width = context.camera.getWidth();
-    int height = context.camera.getHeight();
+    if (!context.camera)
+        throw std::runtime_error("No camera in scene context");
+    const Camera &cam = *context.camera;
+    int width = cam.getWidth();
+    int height = cam.getHeight();
 
     std::ofstream outFile(outputPath);
-    if (!outFile) {
+    if (!outFile)
         throw std::runtime_error("Error: cannot open output file '" + outputPath + "'");
-    }
 
     outFile << "P3\n" << width << ' ' << height << "\n255\n";
 
     for (int y=0; y<height; y++) {
         for (int x=0; x<width; x++) {
-            Ray ray = context.camera.generateRay(x, y);
+            Ray ray = cam.generateRay(x, y);
             Color pixelColor = traceRay(ray, context.scene, MAX_DEPTH);
             outFile << toPPMByte(pixelColor.x) << ' '
                       << toPPMByte(pixelColor.y) << ' '

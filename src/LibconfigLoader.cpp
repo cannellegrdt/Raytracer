@@ -11,6 +11,8 @@
 #include <optional>
 #include <functional>
 #include <vector>
+#include <set>
+#include <filesystem>
 #include <unordered_map>
 #include "FlatColor.hpp"
 #include "Transparency.hpp"
@@ -19,6 +21,7 @@
 #include "DirectionalLight.hpp"
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
+#include "Decorators.hpp"
 
 static double toDouble(const libconfig::Setting &s) {
     if (s.getType() == libconfig::Setting::TypeInt)
@@ -37,6 +40,15 @@ static std::optional<std::reference_wrapper<const libconfig::Setting>> checkValu
 }
 
 SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory &factory) {
+    return load(filePath, factory, {});
+}
+
+SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory &factory, std::set<std::string> visited) {
+    std::string absPath = std::filesystem::canonical(filePath).string();
+    if (visited.count(absPath))
+        throw std::runtime_error("Circular import detected: " + absPath);
+    visited.insert(absPath);
+
     libconfig::Config cfg;
 
     try {
@@ -49,13 +61,8 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
     }
 
     std::vector<std::string> requiredKeys = {
-        "camera",
         "primitives",
-        "lights",
-        "camera.resolution.width", "camera.resolution.height",
-        "camera.position.x", "camera.position.y", "camera.position.z",
-        "camera.rotation.x", "camera.rotation.y", "camera.rotation.z",
-        "camera.fieldOfView"
+        "lights"
     };
     
     for (const auto &key : requiredKeys) {
@@ -64,13 +71,16 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             throw std::runtime_error("Missing key: " + key);
     }
 
-    const libconfig::Setting &cam = cfg.lookup("camera");
-    Vec3 position{toDouble(cam["position"]["x"]), toDouble(cam["position"]["y"]), toDouble(cam["position"]["z"])};
-    Vec3 rotation{toDouble(cam["rotation"]["x"]), toDouble(cam["rotation"]["y"]), toDouble(cam["rotation"]["z"])};
-    double fov = toDouble(cam["fieldOfView"]);
-    int width = cam["resolution"]["width"];
-    int height = cam["resolution"]["height"];
-    Camera camera{position, rotation, fov, width, height};
+    std::optional<Camera> cameraOpt;
+    if (cfg.exists("camera")) {
+        const libconfig::Setting &cam = cfg.lookup("camera");
+        Vec3 position{toDouble(cam["position"]["x"]), toDouble(cam["position"]["y"]), toDouble(cam["position"]["z"])};
+        Vec3 rotation{toDouble(cam["rotation"]["x"]), toDouble(cam["rotation"]["y"]), toDouble(cam["rotation"]["z"])};
+        double fov = toDouble(cam["fieldOfView"]);
+        int width = cam["resolution"]["width"];
+        int height = cam["resolution"]["height"];
+        cameraOpt = Camera{position, rotation, fov, width, height};
+    }
 
     std::unordered_map<std::string, std::string> mapTablePrim = {
         {"spheres", "sphere"},
@@ -190,5 +200,49 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             }
         }
     }
-    return SceneContext{std::move(scene), camera};
+
+    if (cfg.exists("imports")) {
+        const libconfig::Setting &imports = cfg.lookup("imports");
+        for (int i=0; i<imports.getLength(); i++) {
+            const libconfig::Setting &imp = imports[i];
+            std::string subFilePath = imp.lookup("path").c_str();
+
+            SceneContext importedCtx = load(subFilePath, factory, visited);
+
+            if (!cameraOpt && importedCtx.camera) {
+                cameraOpt = importedCtx.camera;
+            }
+
+            auto &importedPrims = importedCtx.scene.primitives();
+            auto &importedLights = importedCtx.scene.lights();
+
+            for (auto &prim : importedPrims) {
+                PrimitivePtr p = std::move(prim);
+                if (imp.exists("scale")) {
+                    const libconfig::Setting &t = imp["scale"];
+                    p = PrimitivePtr(new ScaleDecorator(std::move(p), Vec3{toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])}), p.get_deleter());
+                }
+                if (imp.exists("rotation")) {
+                    const libconfig::Setting &t = imp["rotation"];
+                    p = PrimitivePtr(new RotationDecorator(std::move(p), Vec3{toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])}), p.get_deleter());
+                }
+                if (imp.exists("translation")) {
+                    const libconfig::Setting &t = imp["translation"];
+                    p = PrimitivePtr(new TranslationDecorator(std::move(p), Vec3{toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])}), p.get_deleter());
+                }
+                scene.addPrimitive(std::move(p));
+            }
+            importedPrims.clear();
+            
+            for (auto &light : importedLights) {
+                scene.addLight(std::move(light));
+            }
+            importedLights.clear();
+        }
+    }
+
+    if (!cameraOpt) {
+        throw std::runtime_error("No camera found in the configuration files");
+    }
+    return SceneContext{std::move(scene), cameraOpt};
 }

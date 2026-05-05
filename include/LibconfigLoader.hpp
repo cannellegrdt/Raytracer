@@ -8,6 +8,7 @@
 #ifndef LIBCONFIGLOADER_HPP_
     #define LIBCONFIGLOADER_HPP_
     #include <string>
+    #include <set>
     #include "ISceneLoader.hpp"
 
 /// @brief Loader for .cfg scene files using libconfig++.
@@ -20,6 +21,14 @@ public:
     /// @param factory Factory for creating primitives.
     /// @return Complete scene context with primitives and camera.
     SceneContext load(const std::string &filePath, PrimitiveFactory &factory) override;
+
+private:
+    /// @brief Internal load with visited set.
+    /// @param filePath Path to the .cfg scene file.
+    /// @param factory Factory for creating primitives.
+    /// @param visited Absolute paths already visited.
+    /// @return Complete scene context with primitives and camera.
+    SceneContext load(const std::string &filePath, PrimitiveFactory &factory, std::set<std::string> visited);
 };
 
 #endif /* LIBCONFIGLOADER_HPP_ */

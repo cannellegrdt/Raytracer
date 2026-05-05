@@ -26,10 +26,12 @@ public:
 
     /// @brief Gets all primitives in the scene.
     /// @return Const reference to primitive vector.
+    std::vector<PrimitivePtr> &primitives() { return _primitives; }
     const std::vector<PrimitivePtr> &primitives() const { return _primitives; }
 
     /// @brief Gets all lights in the scene.
     /// @return Const reference to light vector.
+    std::vector<std::unique_ptr<ILight>> &lights() { return _lights; }
     const std::vector<std::unique_ptr<ILight>> &lights() const { return _lights; }
 
 private:
