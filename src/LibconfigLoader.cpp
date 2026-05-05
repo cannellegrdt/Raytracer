@@ -85,9 +85,22 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
 
     std::optional<Supersampling> antialiasingOpt;
     if (cfg.exists("renderer")) {
-        const libconfig::Setting &alias = cfg.lookup("renderer");
-        int samples = alias["antialiasing"]["samples"];
-        antialiasingOpt = Supersampling{samples};
+        const libconfig::Setting &renderer = cfg.lookup("renderer");
+        int samples = 1;
+        std::string type = "uniform";
+        double threshold = 0.0;
+
+        if (renderer.exists("antialiasing")) {
+            const libconfig::Setting &aa = renderer["antialiasing"];
+            samples = aa["samples"];
+
+            if (aa.exists("type"))
+                type = static_cast<const char *>(aa["type"]);
+            
+            if (type == "adaptive" && aa.exists("threshold"))
+                threshold = static_cast<double>(aa["threshold"]);
+        }
+        antialiasingOpt = Supersampling{samples, type, threshold};
     }
 
     std::unordered_map<std::string, std::string> mapTablePrim = {

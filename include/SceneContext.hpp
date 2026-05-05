@@ -8,11 +8,14 @@
 #ifndef SCENECONTEXT_HPP_
     #define SCENECONTEXT_HPP_
     #include <optional>
+    #include <string>
     #include "Scene.hpp"
     #include "Camera.hpp"
 
 struct Supersampling {
-    int nbSamples;
+    int samples;      ///< Number of samples per dimension. Must be >0.
+    std::string type; ///< Supersampling type: "uniform" or "adaptive". Default is "uniform".
+    double threshold; ///< Edge detection threshold for adaptive mode (0.0 to 1.0). Only used when type is "adaptative"
 };
 
 /// @brief Complete render context containing scene and camera.
