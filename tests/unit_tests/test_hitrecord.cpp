@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_hitrecord.cpp
- * Description: Criterion unit tests for HitRecord - field storage and face orientation flag.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for HitRecord - field storage and face orientation flag.
  */
 
 #include <criterion/criterion.h>

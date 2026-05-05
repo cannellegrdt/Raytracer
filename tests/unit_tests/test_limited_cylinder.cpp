@@ -1,10 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_limited_cylinder.cpp
- * Description: Criterion unit tests for the LimitedCylinder plugin - configure validation and ray intersection.
- *
- * limited_cylinder.cpp is included directly (not linked as .so) so we can test the class in isolation.
- * The extern "C" symbols are renamed to avoid linker clashes with other plugin test objects.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for the LimitedCylinder plugin - configure validation and ray intersection.
  */
 
 #include <criterion/criterion.h>

@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_directionallight.cpp
- * Description: Criterion unit tests for DirectionalLight.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for DirectionalLight.
  */
 
 #include <criterion/criterion.h>

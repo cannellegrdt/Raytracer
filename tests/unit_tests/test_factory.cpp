@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_factory.cpp
- * Description: Criterion unit tests for Factory<T> - type registration, creation, and miss handling.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for Factory<T> - type registration, creation, and miss handling.
  */
 
 #include <criterion/criterion.h>

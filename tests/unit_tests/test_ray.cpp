@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_ray.cpp
- * Description: Criterion unit tests for Ray - parametric point evaluation.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for Ray - parametric point evaluation.
  */
 
 #include <criterion/criterion.h>

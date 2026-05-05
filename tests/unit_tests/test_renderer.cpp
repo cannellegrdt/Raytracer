@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_renderer.cpp
- * Description: Criterion unit tests for Renderer - ray tracing, lighting, and scattering.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for Renderer - ray tracing, lighting, and scattering.
  */
 
 #include <criterion/criterion.h>

@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_ambientlight.cpp
- * Description: Criterion unit tests for AmbientLight.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for AmbientLight.
  */
 
 #include <criterion/criterion.h>

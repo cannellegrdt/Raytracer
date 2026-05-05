@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_vec3.cpp
- * Description: Criterion unit tests for Vec3 - construction, operators, dot, cross, length, normalize.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for Vec3 - construction, operators, dot, cross, length, normalize.
  */
 
 #include <criterion/criterion.h>

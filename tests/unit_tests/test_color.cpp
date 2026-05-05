@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_color.cpp
- * Description: Criterion unit tests for Color - clamp() and toPPMByte() conversions.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for Color - clamp() and toPPMByte() conversions.
  */
 
 #include <criterion/criterion.h>

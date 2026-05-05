@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_camera.cpp
- * Description: Criterion unit tests for Camera - construction, ray generation.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for Camera - construction, ray generation.
  */
 
 #include <criterion/criterion.h>

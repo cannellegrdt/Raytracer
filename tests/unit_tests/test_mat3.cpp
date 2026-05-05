@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_mat3.cpp
- * Description: Criterion unit tests for Mat3 - multiply, transpose, rotateX/Y/Z factory functions.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for Mat3 - multiply, transpose, rotateX/Y/Z factory functions.
  */
 
 #include <criterion/criterion.h>

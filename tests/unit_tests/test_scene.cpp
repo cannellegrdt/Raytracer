@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_scene.cpp
- * Description: Criterion unit tests for Scene - primitive and light management.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for Scene - primitive and light management.
  */
 
 #include <criterion/criterion.h>

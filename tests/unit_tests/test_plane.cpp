@@ -1,10 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_plane.cpp
- * Description: Criterion unit tests for the Plane plugin - configure validation and ray intersection.
- *
- * plane.cpp is included directly (not linked as .so) so we can test the class in isolation.
- * The extern "C" symbols are renamed to avoid clashes when linked with other plugin test objects.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for the Plane plugin - configure validation and ray intersection.
  */
 
 #include <criterion/criterion.h>

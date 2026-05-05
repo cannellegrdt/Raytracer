@@ -1,7 +1,8 @@
 /*
  * Project: Raytracer
  * File name: test_materials.cpp
- * Description: Criterion unit tests for FlatColor, Reflection, and Transparency materials.
+ * Author: Cannelle Gourdet - lankley
+ * File description: Criterion unit tests for FlatColor, Reflection, and Transparency materials.
  */
 
 #include <criterion/criterion.h>
