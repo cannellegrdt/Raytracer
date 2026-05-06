@@ -212,4 +212,12 @@ inline Vec3 normalize(const Vec3 &v) {
     return v / len;
 }
 
+/// @brief Computes the reflection of a vector about a normal.
+/// @param i Incident vector (pointing toward the surface).
+/// @param n Surface normal (unit vector).
+/// @return Reflected vector R = i - 2 * dot(n, i) * n.
+inline Vec3 reflect(const Vec3 &i, const Vec3 &n) {
+    return i - 2.0 * dot(n, i) * n;
+}
+
 #endif /* VEC3_HPP_ */

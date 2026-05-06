@@ -150,6 +150,15 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
 
         double diffuse = std::max(0.0, dot(hit->normal, sample.direction));
         lightContrib += sample.color * diffuse;
+
+        auto specularParams = hit->material->getSpecular();
+        if (specularParams) {
+            Vec3 refl = reflect(-sample.direction, hit->normal);
+            Vec3 normalDir = normalize(-ray.direction);
+            double specAngle = std::max(0.0, dot(refl, normalDir));
+            double specular = std::pow(specAngle, specularParams->shininess);
+            lightContrib += specularParams->ks * sample.color * specular;
+        }
     }
 
     if (depth > 0 && scattered.scatteredRay) {

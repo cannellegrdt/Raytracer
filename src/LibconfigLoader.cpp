@@ -20,6 +20,7 @@
 #include "AmbientLight.hpp"
 #include "DirectionalLight.hpp"
 #include "PointLight.hpp"
+#include "PhongMaterial.hpp"
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
@@ -56,6 +57,14 @@ static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
         return std::make_shared<Reflection>(color);
     if (type == "transparency")
         return std::make_shared<Transparency>(color);
+    if (type == "phong") {
+        Color specColor{
+            toDouble(mat["specular"]["r"]),
+            toDouble(mat["specular"]["g"]),
+            toDouble(mat["specular"]["b"])
+        };
+        return std::make_shared<PhongMaterial>(color, specColor, mat["shininess"]);
+    }
     throw std::runtime_error("Unknown material type: " + type);
 }
 
