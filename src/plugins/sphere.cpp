@@ -43,8 +43,12 @@ public:
         bool frontFace = dot(ray.direction, normal) < 0.0;
         if (!frontFace)
             normal = -normal;
-        
-        return HitRecord{t, point, normal, _material, frontFace};
+
+        Vec3 pHat = (point - _center) / _radius;
+        double u = 0.5 + std::atan2(pHat.z, pHat.x) / (2 * M_PI);
+        double v = 0.5 - std::asin(pHat.y) / M_PI;
+
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
     };
 
 private:

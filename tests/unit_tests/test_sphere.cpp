@@ -149,3 +149,31 @@ Test(sphere, plugin_destroy_deletes_object) {
     IPrimitive *p = sphere_create_fn();
     cr_assert_no_throw(sphere_destroy_fn(p));
 }
+
+Test(sphere, hit_has_valid_uv_coordinates) {
+    Sphere s;
+    s.configure(sphereParams(0, 0, 0, 1.0), nullptr);
+    Ray ray{{2, 0, 0}, {-1, 0, 0}};
+    auto hit = s.intersect(ray);
+    cr_assert(hit.has_value());
+    cr_assert(hit->UV.first >= 0.0 && hit->UV.first <= 1.0);
+    cr_assert(hit->UV.second >= 0.0 && hit->UV.second <= 1.0);
+}
+
+Test(sphere, uv_at_pole) {
+    Sphere s;
+    s.configure(sphereParams(0, 0, 0, 1.0), nullptr);
+    Ray ray{{0, 2, 0}, {0, -1, 0}};
+    auto hit = s.intersect(ray);
+    cr_assert(hit.has_value());
+    cr_assert_float_eq(hit->UV.second, 0.0, 1e-3);
+}
+
+Test(sphere, uv_at_equator) {
+    Sphere s;
+    s.configure(sphereParams(0, 0, 0, 1.0), nullptr);
+    Ray ray{{2, 0, 0}, {-1, 0, 0}};
+    auto hit = s.intersect(ray);
+    cr_assert(hit.has_value());
+    cr_assert_float_eq(hit->UV.second, 0.5, 1e-3);
+}

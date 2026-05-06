@@ -14,11 +14,12 @@ class IMaterial;
 
 /// @brief Records details of a ray-primitive intersection.
 struct HitRecord {
-    double t;                              ///< Distance from ray origin to intersection point.
-    Vec3 point;                            ///< 3D position of the intersection.
-    Vec3 normal;                           ///< Surface normal at the intersection.
-    std::shared_ptr<IMaterial> material;   ///< Shared pointer to the material at the intersection.
-    bool frontFace;                        ///< True if ray hit front face of surface.
+    double t;                                  ///< Distance from ray origin to intersection point.
+    Vec3 point;                                ///< 3D position of the intersection.
+    Vec3 normal;                               ///< Surface normal at the intersection.
+    std::shared_ptr<IMaterial> material;       ///< Shared pointer to the material at the intersection.
+    bool frontFace;                            ///< True if ray hit front face of surface.
+    std::pair<double, double> UV = {0.0, 0.0}; ///< UV texture coordinates [0, 1].
 };
 
 #endif /* HITRECORD_HPP_ */

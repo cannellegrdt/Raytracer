@@ -22,6 +22,7 @@
 #include "DirectionalLight.hpp"
 #include "PointLight.hpp"
 #include "PhongMaterial.hpp"
+#include "TexturedMaterial.hpp"
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
@@ -47,6 +48,10 @@ static std::optional<std::reference_wrapper<const libconfig::Setting>> checkValu
 
 static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
     std::string type = mat["type"].c_str();
+    if (type == "textured") {
+        std::string texturePath = mat["texture"].c_str();
+        return std::make_shared<TexturedMaterial>(texturePath);
+    }
     Color color{
         toDouble(mat["color"]["r"]),
         toDouble(mat["color"]["g"]),

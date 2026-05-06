@@ -67,7 +67,7 @@ std::optional<HitRecord> ScaleDecorator::intersect(const Ray &ray) const {
     Vec3 rawNormal = {hit->normal.x / _scale.x, hit->normal.y / _scale.y, hit->normal.z / _scale.z};
     Vec3 worldNormal = normalize(rawNormal);
 
-    return HitRecord{hit->t, worldPoint, worldNormal, hit->material, hit->frontFace};
+    return HitRecord{hit->t, worldPoint, worldNormal, hit->material, hit->frontFace, hit->UV};
 }
 
 ShearDecorator::ShearDecorator(PrimitivePtr inner, double sxy, double sxz, double syx, double syz, double szx, double szy)

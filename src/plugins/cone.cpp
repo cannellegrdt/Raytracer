@@ -50,14 +50,24 @@ public:
 
         Vec3 point = ray.at(t);
         Vec3 radial = point - _apex;
-        Vec3 rawNormal = dot(radial, _axis) * _axis - k * radial;
+        double h = dot(radial, _axis);
+        Vec3 rawNormal = h * _axis - k * radial;
         if (length(rawNormal) < epsilon) return std::nullopt;
         Vec3 normal = normalize(rawNormal);
         bool frontFace = dot(ray.direction, normal) < 0.0;
         if (!frontFace)
             normal = -normal;
+
+        double u = 0.5 + std::atan2(normal.z, normal.x) / (2.0 * M_PI);
+        if (u < 0.0)
+            u += 1.0;
+
+        double v = h * 0.1;
+        v -= std::floor(v);
+        if (v < 0.0)
+            v += 1.0;
         
-        return HitRecord{t, point, normal, _material, frontFace};
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
     };
 
 private:

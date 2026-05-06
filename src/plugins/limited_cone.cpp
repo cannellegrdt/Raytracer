@@ -77,7 +77,13 @@ private:
         bool frontFace = dot(ray.direction, normal) < 0.0;
         if (!frontFace)
             normal = -normal;
-        return HitRecord{t, point, normal, _material, frontFace};
+
+        double u = 0.5 + std::atan2(normal.z, normal.x) / (2.0 * M_PI);
+        if (u < 0.0)
+            u += 1.0;
+        double v = h / _height;
+
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
     }
 
     std::optional<HitRecord> intersectDisk(const Ray &ray, Vec3 center, Vec3 outwardNormal, double radius) const {
@@ -94,7 +100,16 @@ private:
         bool frontFace = denom < 0.0;
         Vec3 normal = frontFace ? outwardNormal : -outwardNormal;
 
-        return HitRecord{t, point, normal, _material, frontFace};
+        Vec3 up(0, 1, 0);
+        Vec3 tangent = (std::abs(dot(up, outwardNormal)) > 0.999) ?  Vec3(1, 0, 0) : normalize(cross(up, outwardNormal));
+        Vec3 bitangent = normalize(cross(outwardNormal, tangent));
+        
+        double u = 0.5 + std::atan2(dot(diff, bitangent), dot(diff, tangent)) / (2.0 * M_PI);
+        if (u < 0.0) u += 1.0;
+        double v = std::sqrt(dot(diff, diff)) / radius;
+        v -= std::floor(v);
+
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
     }
 };
 

@@ -35,7 +35,19 @@ public:
         Vec3 normal = _normal;
         if (!frontFace)
             normal = -normal;
-        return HitRecord{t, ray.at(t), normal, _material, frontFace};
+
+        Vec3 point = ray.at(t);
+        Vec3 radial = point - _center;
+
+        Vec3 up(0, 1, 0);
+        Vec3 tan1 = (std::abs(dot(up, _normal)) > 0.999) ? Vec3(1, 0, 0) : normalize(cross(up, _normal));
+        Vec3 tan2 = normalize(cross(_normal, tan1));
+        double u = dot(radial, tan1);
+        u -= std::floor(u);
+        double v = dot(radial, tan2);
+        v -= std::floor(v);
+
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
     };
 
 private:

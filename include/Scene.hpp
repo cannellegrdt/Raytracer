@@ -12,6 +12,7 @@
     #include <memory>
     #include "Factory.hpp"
     #include "ILight.hpp"
+    #include "Color.hpp"
 
 /// @brief Container for all scene objects (primitives and lights).
 class Scene {

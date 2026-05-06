@@ -47,13 +47,23 @@ public:
 
         Vec3 point = ray.at(t);
         Vec3 radial = point - _center;
-        Vec3 normal = radial - dot(radial, _axis) * _axis;
+        double h = dot(radial, _axis);
+        Vec3 normal = radial - h * _axis;
         bool frontFace = dot(ray.direction, normal) < 0.0;
         if (!frontFace)
             normal = -normal;
         normal = normalize(normal);
 
-        return HitRecord{t, point, normal, _material, frontFace};
+        double u = 0.5 + std::atan2(normal.z, normal.x) / (2.0 * M_PI);
+        if (u < 0.0)
+            u += 1.0;
+        
+        double v = h * 0.1;
+        v -= std::floor(v);
+        if (v < 0.0)
+            v += 1.0;
+
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
     };
 
 private:
