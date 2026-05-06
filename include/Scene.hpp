@@ -34,9 +34,13 @@ public:
     std::vector<std::unique_ptr<ILight>> &lights() { return _lights; }
     const std::vector<std::unique_ptr<ILight>> &lights() const { return _lights; }
 
+    void setBackgroundColor(const Color &color) { _backgroundColor = color; }
+    const Color &backgroundColor() const { return _backgroundColor; }
+
 private:
     std::vector<PrimitivePtr> _primitives;
     std::vector<std::unique_ptr<ILight>> _lights;
+    Color _backgroundColor{0, 0, 0};
 };
 
 #endif /* SCENE_HPP_ */

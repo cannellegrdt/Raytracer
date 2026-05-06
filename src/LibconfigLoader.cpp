@@ -17,6 +17,7 @@
 #include "FlatColor.hpp"
 #include "Transparency.hpp"
 #include "Reflection.hpp"
+#include "Refraction.hpp"
 #include "AmbientLight.hpp"
 #include "DirectionalLight.hpp"
 #include "PointLight.hpp"
@@ -64,6 +65,14 @@ static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
             toDouble(mat["specular"]["b"])
         };
         return std::make_shared<PhongMaterial>(color, specColor, mat["shininess"]);
+    }
+    if (type == "refraction") {
+        double ior = 1.5;
+        if (mat.exists("ior"))
+            ior = toDouble(mat["ior"]);
+        if (ior <= 0.0)
+            throw std::runtime_error("IOR must be > 0");
+        return std::make_shared<Refraction>(color, ior);
     }
     throw std::runtime_error("Unknown material type: " + type);
 }
@@ -345,6 +354,15 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
                 scene.addLight(std::move(light));
             importedLights.clear();
         }
+    }
+
+    if (cfg.exists("background")) {
+        const libconfig::Setting &bg = cfg.lookup("background");
+        scene.setBackgroundColor(Color{
+            toDouble(bg["r"]),
+            toDouble(bg["g"]),
+            toDouble(bg["b"])
+        });
     }
 
     if (!cameraOpt)

@@ -149,7 +149,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
 Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
     auto hit = closestHit(ray, scene);
     if (!hit)
-        return Color{0, 0, 0};
+        return scene.backgroundColor();
 
     ScatterResult scattered = hit->material->scatter(ray, *hit);
 
@@ -194,7 +194,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
 
     if (depth > 0 && scattered.scatteredRay) {
         Color indirect = traceRay(*scattered.scatteredRay, scene, depth - 1);
-        return scattered.attenuation * (lightContrib + indirect);
+        return scattered.attenuation * indirect;
     }
     return scattered.attenuation * lightContrib;
 }

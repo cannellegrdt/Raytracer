@@ -397,12 +397,14 @@ material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
 | `"flat"` | Solid color, no secondary rays |
 | `"reflection"` | Mirror reflection; `color` tints the reflected ray |
 | `"transparency"` | Transmits the ray through the surface; `color` tints |
+| `"refraction"` | Refracts rays according to Snell-Descartes law; `color` tints, `ior` = index of refraction |
 | `"phong"` | Diffuse + specular (Phong model); `color` = diffuse color, `specular` = specular color, `shininess` = α |
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `type` | string | One of `"flat"`, `"reflection"`, `"transparency"`, `"phong"` |
+| `type` | string | One of `"flat"`, `"reflection"`, `"transparency"`, `"refraction"`, `"phong"` |
 | `color` | Color | RGB in `[0.0, 1.0]` (diffuse color for phong) |
+| `ior` | double | Index of refraction, > 0 (only for `"refraction"`; common values: air ≈ 1.0, water ≈ 1.33, glass ≈ 1.5) |
 | `specular` | Color | RGB specular highlight color (only for `"phong"`) |
 | `shininess` | double | Shininess exponent > 0 (only for `"phong"`) |
 
