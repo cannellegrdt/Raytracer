@@ -12,6 +12,7 @@ LightSample AmbientLight::getSample(const Vec3 &/*hitPoint*/, const Vec3 &/*norm
         Vec3{0, 0, 0},
         _color * _intensity,
         std::numeric_limits<double>::infinity(),
-        true
+        true,
+        _maxDist
     };
 }

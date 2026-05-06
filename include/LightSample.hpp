@@ -11,10 +11,11 @@
 
 /// @brief Result of sampling a light at a point.
 struct LightSample {
-    Vec3 direction;       ///< Direction from hit point toward the light.
-    Vec3 color;           ///< Color/intensity of the light.
-    double distance;      ///< Distance from hit point to light source.
-    bool isAmbient = false; ///< True for ambient lights (no direction, no shadow test).
+    Vec3 direction;                                               ///< Direction from hit point toward the light.
+    Vec3 color;                                                   ///< Color/intensity of the light.
+    double distance;                                              ///< Distance from;hit point to light source.
+    bool isAmbient = false;                                       ///< True for ambient lights (no direction, no shadow test).
+    double maxDistance = std::numeric_limits<double>::infinity(); ///< Max distance for ambient occlusion.
 };
 
 #endif /* LIGHTSAMPLE_HPP_ */

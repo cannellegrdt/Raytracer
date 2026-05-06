@@ -16,7 +16,7 @@ public:
     /// @brief Constructs an AmbientLight with the given color and intensity.
     /// @param color Color of the ambient light.
     /// @param intensity Intensity multiplier for the light.
-    AmbientLight(const Color &color, double intensity) : _color(color), _intensity(intensity) {};
+    AmbientLight(const Color &color, double intensity, double maxDist = 10.0) : _color(color), _intensity(intensity), _maxDist(maxDist) {};
 
     /// @brief Samples the ambient light at a given point.
     /// @param hitPoint Point in space to sample from (unused for ambient light).
@@ -27,6 +27,7 @@ public:
 private:
     Color _color;      ///< Color of the ambient light.
     double _intensity; ///< Intensity multiplier for the light.
+    double _maxDist;   ///< Maximum distance for ambient occlusion rays.
 };
 
 #endif /* AMBIENTLIGHT_HPP_ */

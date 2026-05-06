@@ -413,7 +413,7 @@ material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
 ```cfg
 lights = {
     ambient = (
-        { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.2; }
+        { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.2; maxDist = 10.0; }
     );
     directional = (
         {
@@ -431,6 +431,7 @@ lights = {
 |-------|------|-------------|
 | `color` | Color | Light color |
 | `intensity` | double | Multiplier (> 0) |
+| `maxDist` | double | *Optional.* Maximum distance for ambient occlusion rays (default: 10.0) |
 
 ### Directional
 

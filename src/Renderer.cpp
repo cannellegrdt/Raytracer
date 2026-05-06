@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <random>
 #include <cmath>
 #include "Renderer.hpp"
 #include "IMaterial.hpp"
@@ -15,6 +16,24 @@
 #include "Common.hpp"
 
 constexpr int MAX_DEPTH = 10;
+
+static std::random_device rd;
+static std::mt19937 gen(rd());
+static std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+static Vec3 randomInUnitSphere() {
+    while (true) {
+        Vec3 p{dist(gen) * 2 - 1, dist(gen) * 2 - 1, dist(gen) * 2 - 1};
+        if (dot(p, p) < 1.0) return p;
+    }
+}
+
+static Vec3 randomInHemisphere(const Vec3 &normal) {
+    Vec3 inUnitSphere = randomInUnitSphere();
+    if (dot(inUnitSphere, normal) > 0.0)
+        return inUnitSphere;
+    return -inUnitSphere;
+}
 
 std::optional<HitRecord> Renderer::closestHit(const Ray &ray, const Scene &scene) {
     std::optional<HitRecord> closest;
@@ -139,7 +158,19 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
         LightSample sample = light->getSample(hit->point, hit->normal);
 
         if (sample.isAmbient) {
-            lightContrib += sample.color;
+            int nbAORays = 16;
+            int unoccluded = 0;
+            
+            for (int i=0; i<nbAORays; i++) {
+                Vec3 AODir = randomInHemisphere(hit->normal);
+                Ray AORay{hit->point + RayBias * hit->normal, AODir};
+                auto AOHit = closestHit(AORay, scene);
+                if (!AOHit || AOHit->t > sample.maxDistance)
+                    unoccluded++;
+            }
+
+            double AOFactor = static_cast<double>(unoccluded) / nbAORays;
+            lightContrib += sample.color * AOFactor;
             continue;
         }
 

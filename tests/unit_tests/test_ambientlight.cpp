@@ -1,10 +1,3 @@
-/*
- * Project: Raytracer
- * File name: test_ambientlight.cpp
- * Author: Cannelle Gourdet - lankley
- * File description: Criterion unit tests for AmbientLight.
- */
-
 #include <criterion/criterion.h>
 #include <limits>
 #include "AmbientLight.hpp"
@@ -56,4 +49,22 @@ Test(ambientlight, zero_intensity_returns_zero_color) {
     cr_assert_float_eq(sample.color.x, 0.0, 1e-15);
     cr_assert_float_eq(sample.color.y, 0.0, 1e-15);
     cr_assert_float_eq(sample.color.z, 0.0, 1e-15);
+}
+
+Test(ambientlight, default_maxDist_is_ten) {
+    AmbientLight light(Color{1, 1, 1}, 1.0);
+    LightSample sample = light.getSample(Vec3{0, 0, 0}, Vec3{0, 0, 1});
+    cr_assert_float_eq(sample.maxDistance, 10.0, 1e-15);
+}
+
+Test(ambientlight, custom_maxDist) {
+    AmbientLight light(Color{1, 1, 1}, 1.0, 25.0);
+    LightSample sample = light.getSample(Vec3{0, 0, 0}, Vec3{0, 0, 1});
+    cr_assert_float_eq(sample.maxDistance, 25.0, 1e-15);
+}
+
+Test(ambientlight, maxDist_passed_to_sample) {
+    AmbientLight light(Color{1, 1, 1}, 1.0, 5.0);
+    LightSample sample = light.getSample(Vec3{0, 0, 0}, Vec3{0, 0, 1});
+    cr_assert_float_eq(sample.maxDistance, 5.0, 1e-15);
 }

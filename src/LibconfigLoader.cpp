@@ -302,7 +302,10 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             double intensity = toDouble(elem["intensity"]);
 
             if (name == "ambient") {
-                scene.addLight(std::make_unique<AmbientLight>(color, intensity));
+                double maxDist = 10.0;
+                if (elem.exists("maxDist"))
+                    maxDist = toDouble(elem["maxDist"]);
+                scene.addLight(std::make_unique<AmbientLight>(color, intensity, maxDist));
             } else if (name == "directional") {
                 Vec3 direction{
                     toDouble(elem["direction"]["x"]),
