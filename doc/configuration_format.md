@@ -437,6 +437,14 @@ lights = {
 | `color` | Color | Light color |
 | `intensity` | double | Multiplier (> 0) |
 
+### Point
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `position` | Vec3 | Position of the point light in world space |
+| `color` | Color | Light color |
+| `intensity` | double | Multiplier (> 0) |
+
 Multiple entries of the same type are allowed.
 
 ---

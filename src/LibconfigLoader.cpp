@@ -19,6 +19,7 @@
 #include "Reflection.hpp"
 #include "AmbientLight.hpp"
 #include "DirectionalLight.hpp"
+#include "PointLight.hpp"
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
@@ -300,6 +301,13 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
                     toDouble(elem["direction"]["z"])
                 };
                 scene.addLight(std::make_unique<DirectionalLight>(direction, color, intensity));
+            } else if (name == "point") {
+                Vec3 position{
+                    toDouble(elem["position"]["x"]),
+                    toDouble(elem["position"]["y"]),
+                    toDouble(elem["position"]["z"])
+                };
+                scene.addLight(std::make_unique<PointLight>(position, color, intensity));
             }
         }
     }
