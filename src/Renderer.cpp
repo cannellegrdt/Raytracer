@@ -153,14 +153,15 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
 
     ScatterResult scattered = hit->material->scatter(ray, *hit);
 
-    Color lightContrib{0, 0, 0};
+    Color lightDiffuse{0, 0, 0};
+    Color lightSpecular{0, 0, 0};
     for (const auto &light : scene.lights()) {
         LightSample sample = light->getSample(hit->point, hit->normal);
 
         if (sample.isAmbient) {
             int nbAORays = 16;
             int unoccluded = 0;
-            
+
             for (int i=0; i<nbAORays; i++) {
                 Vec3 AODir = randomInHemisphere(hit->normal);
                 Ray AORay{hit->point + RayBias * hit->normal, AODir};
@@ -170,7 +171,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
             }
 
             double AOFactor = static_cast<double>(unoccluded) / nbAORays;
-            lightContrib += sample.color * AOFactor;
+            lightDiffuse += sample.color * AOFactor;
             continue;
         }
 
@@ -180,7 +181,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
             continue;
 
         double diffuse = std::max(0.0, dot(hit->normal, sample.direction));
-        lightContrib += sample.color * diffuse;
+        lightDiffuse += sample.color * diffuse;
 
         auto specularParams = hit->material->getSpecular();
         if (specularParams) {
@@ -188,7 +189,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
             Vec3 normalDir = normalize(-ray.direction);
             double specAngle = std::max(0.0, dot(refl, normalDir));
             double specular = std::pow(specAngle, specularParams->shininess);
-            lightContrib += specularParams->ks * sample.color * specular;
+            lightSpecular += specularParams->ks * sample.color * specular;
         }
     }
 
@@ -196,5 +197,5 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
         Color indirect = traceRay(*scattered.scatteredRay, scene, depth - 1);
         return scattered.attenuation * indirect;
     }
-    return scattered.attenuation * lightContrib;
+    return scattered.attenuation * lightDiffuse + lightSpecular;
 }
