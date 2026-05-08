@@ -9,11 +9,19 @@
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
 
+/// @brief Sphere primitive implementing ray-sphere intersection via the half-discriminant method.
+/// Inherits from IPrimitive to integrate with the raytracer plugin system.
 class Sphere : public IPrimitive {
 public:
+    /// @brief Default constructor initializing sphere to unit sphere at origin.
     Sphere() : _center(0, 0, 0), _radius(1.0), _material(nullptr) {}
+    /// @brief Default destructor overriding IPrimitive.
     ~Sphere() override = default;
 
+    /// @brief Configures the sphere with position, radius, and material.
+    /// @param params Unordered map of parameters: "x", "y", "z" (center), "r" (radius).
+    /// @param mat Shared pointer to the sphere material.
+    /// @throws std::invalid_argument If radius is non-positive.
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override {
         _center = { params.at("x"), params.at("y"), params.at("z") };
@@ -23,6 +31,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Computes the nearest ray-sphere intersection.
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         Vec3 vecOC = ray.origin - _center;
         double a = dot(ray.direction, ray.direction);
@@ -56,9 +67,9 @@ public:
     };
 
 private:
-    Vec3 _center;
-    double _radius;
-    std::shared_ptr<IMaterial> _material;
+    Vec3 _center;                          ///< Center position of the sphere
+    double _radius;                        ///< Radius of the sphere
+    std::shared_ptr<IMaterial> _material;  ///< Material of the sphere
 };
 
 extern "C" IPrimitive *create() { return new Sphere(); };

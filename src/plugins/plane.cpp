@@ -9,11 +9,19 @@
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
 
+/// @brief Plane primitive implementing ray-plane intersection.
+/// Inherits from IPrimitive to integrate with the raytracer plugin system.
 class Plane : public IPrimitive {
 public:
+    /// @brief Default constructor initializing plane at origin with upward normal.
     Plane() : _center(0, 0, 0), _normal(0, 1, 0), _material(nullptr) {}
+    /// @brief Default destructor overriding IPrimitive.
     ~Plane() override = default;
 
+    /// @brief Configures the plane with position, normal, and material.
+    /// @param params Unordered map of parameters: "x", "y", "z" (point on plane), "nx", "ny", "nz" (normal direction).
+    /// @param mat Shared pointer to the plane material.
+    /// @throws std::invalid_argument If normal is zero.
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override {
         _center = { params.at("x"), params.at("y"), params.at("z") };
@@ -24,6 +32,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Computes the ray-plane intersection.
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         double parallel = dot(_normal, ray.direction);
         if (std::abs(parallel) < epsilon) return std::nullopt;
@@ -51,9 +62,9 @@ public:
     };
 
 private:
-    Vec3 _center;
-    Vec3 _normal;
-    std::shared_ptr<IMaterial> _material;
+    Vec3 _center;                          ///< A point on the plane
+    Vec3 _normal;                          ///< Normal vector of the plane (unit length)
+    std::shared_ptr<IMaterial> _material;  ///< Material of the plane
 };
 
 extern "C" IPrimitive *create() { return new Plane(); };

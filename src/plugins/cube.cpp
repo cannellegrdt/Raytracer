@@ -9,11 +9,19 @@
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
 
+/// @brief Axis-aligned cube primitive implementing ray-cube intersection via slab method.
+/// Inherits from IPrimitive to integrate with the raytracer plugin system.
 class Cube : public IPrimitive {
 public:
+    /// @brief Default constructor initializing cube bounds to unit cube at origin.
     Cube() : _min(0, 0, 0), _max(1, 1, 1), _material(nullptr) {}
+    /// @brief Default destructor overriding IPrimitive.
     ~Cube() override = default;
 
+    /// @brief Configures the cube with center position, size, and material.
+    /// @param params Unordered map of parameters: "x", "y", "z" (center), "s" (size of cube side).
+    /// @param mat Shared pointer to the cube material.
+    /// @throws std::invalid_argument If size is non-positive.
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override {
         Vec3 center = { params.at("x"), params.at("y"), params.at("z") };
@@ -26,6 +34,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Computes the nearest ray-cube intersection using slab method.
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         double tXMin, tXMax;
         if (ray.direction.x >= 0) {
@@ -86,10 +97,13 @@ public:
     };
 
 private:
-    Vec3 _min;
-    Vec3 _max;
-    std::shared_ptr<IMaterial> _material;
+    Vec3 _min;                              ///< Minimum corner of the axis-aligned cube
+    Vec3 _max;                              ///< Maximum corner of the axis-aligned cube
+    std::shared_ptr<IMaterial> _material;   ///< Material of the cube
 
+    /// @brief Computes the surface normal at a given point on the cube.
+    /// @param point The intersection point on the cube surface.
+    /// @return Surface normal vector pointing outward.
     Vec3 computeNormal(const Vec3 &point) const {
         double eps = 1e-6;
         if (std::abs(point.x - _min.x) < eps) return Vec3(-1, 0, 0);

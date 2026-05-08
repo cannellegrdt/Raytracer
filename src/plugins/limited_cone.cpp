@@ -10,11 +10,19 @@
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
 
+/// @brief Limited cone primitive with capped base implementing ray-cone intersection via quadratic form.
+/// Inherits from IPrimitive to integrate with the raytracer plugin system.
 class LimitedCone : public IPrimitive {
 public:
+    /// @brief Default constructor initializing cone parameters to default values.
     LimitedCone() : _apex(0, 0, 0), _axis(0, 1, 0), _angle(0), _height(0), _material(nullptr) {}
+    /// @brief Default destructor overriding IPrimitive.
     ~LimitedCone() override = default;
 
+    /// @brief Configures the limited cone with position, orientation, angle, height, and material.
+    /// @param params Unordered map of parameters: "x", "y", "z" (apex), "ax", "ay", "az" (axis), "angle" (half-angle in radians), "h" (height).
+    /// @param mat Shared pointer to the cone material.
+    /// @throws std::invalid_argument If axis is zero, angle is not in (0, pi/2), or height is non-positive.
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override {
         _apex = { params.at("x"), params.at("y"), params.at("z") };
@@ -31,6 +39,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Computes the nearest ray-cone intersection (body and cap).
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         std::optional<HitRecord> best = intersectBody(ray);
         double capRadius = _height * std::tan(_angle);
@@ -43,12 +54,15 @@ public:
     }
 
 private:
-    Vec3 _apex;
-    Vec3 _axis;
-    double _angle;
-    double _height;
-    std::shared_ptr<IMaterial> _material;
+    Vec3 _apex;                            ///< Apex (tip) position of the cone
+    Vec3 _axis;                            ///< Axis direction of the cone (from apex toward base)
+    double _angle;                         ///< Half-angle of the cone in radians
+    double _height;                        ///< Height of the cone from apex to base
+    std::shared_ptr<IMaterial> _material;  ///< Material of the cone
 
+    /// @brief Computes ray-cone body intersection (infinite cone, then clipped by height).
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersectBody(const Ray &ray) const {
         double k = std::cos(_angle) * std::cos(_angle);
         Vec3 vecOA = ray.origin - _apex;
@@ -87,6 +101,12 @@ private:
         return HitRecord{t, point, normal, _material, frontFace, {u, v}, tangent, _axis};
     }
 
+    /// @brief Computes ray-disk intersection for the cone cap.
+    /// @param ray The ray to test for intersection.
+    /// @param center Center of the disk.
+    /// @param outwardNormal Outward-facing normal of the disk.
+    /// @param radius Radius of the disk.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersectDisk(const Ray &ray, Vec3 center, Vec3 outwardNormal, double radius) const {
         double denom = dot(ray.direction, outwardNormal);
         if (std::abs(denom) < epsilon) return std::nullopt;

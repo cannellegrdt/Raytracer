@@ -10,11 +10,19 @@
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
 
+/// @brief Infinite cone primitive implementing ray-cone intersection via quadratic form.
+/// Inherits from IPrimitive to integrate with the raytracer plugin system.
 class Cone : public IPrimitive {
 public:
+    /// @brief Default constructor initializing cone parameters to default values.
     Cone() : _apex(0, 0, 0), _axis(0, 1, 0), _angle(0), _material(nullptr) {}
+    /// @brief Default destructor overriding IPrimitive.
     ~Cone() override = default;
 
+    /// @brief Configures the infinite cone with position, orientation, angle, and material.
+    /// @param params Unordered map of parameters: "x", "y", "z" (apex), "ax", "ay", "az" (axis), "angle" (half-angle in radians).
+    /// @param mat Shared pointer to the cone material.
+    /// @throws std::invalid_argument If axis is zero or angle is not in (0, pi/2).
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override {
         _apex = { params.at("x"), params.at("y"), params.at("z") };
@@ -28,6 +36,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Computes the nearest ray-cone intersection (infinite cone).
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         double k = std::cos(_angle) * std::cos(_angle);
         Vec3 vecOA = ray.origin - _apex;
@@ -73,10 +84,10 @@ public:
     };
 
 private:
-    Vec3 _apex;
-    Vec3 _axis;
-    double _angle;
-    std::shared_ptr<IMaterial> _material;
+    Vec3 _apex;                            ///< Apex (tip) position of the cone
+    Vec3 _axis;                            ///< Axis direction of the cone
+    double _angle;                         ///< Half-angle of the cone in radians
+    std::shared_ptr<IMaterial> _material;  ///< Material of the cone
 };
 
 extern "C" IPrimitive *create() { return new Cone(); };

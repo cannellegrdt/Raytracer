@@ -11,11 +11,20 @@
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
 
+/// @brief Tangle cube implicit surface plugin using ray marching with bisection refinement.
+/// Inherits from IPrimitive to integrate with the raytracer plugin system.
+/// Implements the implicit surface: x⁴-5x²+y⁴-5y²+z⁴-5z²+11.8=0.
 class Tanglecube : public IPrimitive {
 public:
+    /// @brief Default constructor initializing tangle cube parameters to default values.
     Tanglecube() : _center(0, 0, 0), _scale(1.0), _material(nullptr) {}
+    /// @brief Default destructor overriding IPrimitive.
     ~Tanglecube() override = default;
 
+    /// @brief Configures the tangle cube with position, scale, and material.
+    /// @param params Unordered map of parameters: "x", "y", "z" (center), "s" (scale, default 1.0).
+    /// @param mat Shared pointer to the tangle cube material.
+    /// @throws std::invalid_argument If scale is non-positive.
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override {
         _center = { params.at("x"), params.at("y"), params.at("z") };
@@ -25,6 +34,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Computes the nearest ray-tanglecube intersection via bounded ray marching and bisection.
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         Vec3 orig = ray.origin - _center;
         Vec3 dir = ray.direction;
@@ -88,13 +100,23 @@ public:
     }
 
 private:
-    static constexpr double _bound = 4.0;
+    Vec3 _center;                           ///< Center position of the tangle cube
+    double _scale;                          ///< Scale factor for the tangle cube
+    std::shared_ptr<IMaterial> _material;   ///< Material of the tangle cube
+    
+    static constexpr double _bound = 4.0;   ///< Bounding radius for initial ray intersection test
 
+    /// @brief Evaluates the tangle cube implicit function at point p.
+    /// @param p Point to evaluate (in object space, pre-scaled).
+    /// @return Value of x⁴-5x²+y⁴-5y²+z⁴-5z²+11.8.
     double evalF(const Vec3 &p) const {
         double x2 = p.x * p.x, y2 = p.y * p.y, z2 = p.z * p.z;
         return x2*x2 - 5.0*x2 + y2*y2 - 5.0*y2 + z2*z2 - 5.0*z2 + 11.8;
     }
 
+    /// @brief Computes the gradient (surface normal direction) at point p.
+    /// @param p Point to evaluate (in object space, pre-scaled).
+    /// @return Gradient vector of the implicit function.
     Vec3 gradient(const Vec3 &p) const {
         return {
             4.0*p.x*p.x*p.x - 10.0*p.x,
@@ -102,10 +124,6 @@ private:
             4.0*p.z*p.z*p.z - 10.0*p.z
         };
     }
-
-    Vec3 _center;
-    double _scale;
-    std::shared_ptr<IMaterial> _material;
 };
 
 extern "C" IPrimitive *create() { return new Tanglecube(); };

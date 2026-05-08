@@ -9,11 +9,19 @@
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
 
+/// @brief Infinite cylinder primitive implementing ray-cylinder intersection via axis-projection.
+/// Inherits from IPrimitive to integrate with the raytracer plugin system.
 class Cylinder : public IPrimitive {
 public:
+    /// @brief Default constructor initializing cylinder parameters to default values.
     Cylinder() : _center(0, 0, 0), _axis(0, 1, 0), _radius(0), _material(nullptr) {}
+    /// @brief Default destructor overriding IPrimitive.
     ~Cylinder() override = default;
 
+    /// @brief Configures the infinite cylinder with position, orientation, radius, and material.
+    /// @param params Unordered map of parameters: "x", "y", "z" (center), "ax", "ay", "az" (axis), "r" (radius).
+    /// @param mat Shared pointer to the cylinder material.
+    /// @throws std::invalid_argument If axis is zero or radius is non-positive.
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override {
         _center = { params.at("x"), params.at("y"), params.at("z") };
@@ -27,6 +35,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Computes the nearest ray-cylinder intersection (infinite cylinder).
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         Vec3 dPrime = ray.direction - dot(ray.direction, _axis) * _axis;
         Vec3 vecOCPrime = (ray.origin - _center) - dot(ray.origin - _center, _axis) * _axis;
@@ -69,10 +80,10 @@ public:
     };
 
 private:
-    Vec3 _center;
-    Vec3 _axis;
-    double _radius;
-    std::shared_ptr<IMaterial> _material;
+    Vec3 _center;                          ///< Reference center point on the cylinder axis
+    Vec3 _axis;                            ///< Axis direction of the cylinder
+    double _radius;                        ///< Radius of the cylinder
+    std::shared_ptr<IMaterial> _material;  ///< Material of the cylinder
 };
 
 extern "C" IPrimitive *create() { return new Cylinder(); };

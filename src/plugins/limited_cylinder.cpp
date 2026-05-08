@@ -10,11 +10,19 @@
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
 
+/// @brief Limited cylinder primitive with capped ends implementing ray-cylinder intersection via axis-projection.
+/// Inherits from IPrimitive to integrate with the raytracer plugin system.
 class LimitedCylinder : public IPrimitive {
 public:
+    /// @brief Default constructor initializing cylinder parameters to default values.
     LimitedCylinder() : _center(0, 0, 0), _axis(0, 1, 0), _height(0), _radius(0), _material(nullptr) {}
+    /// @brief Default destructor overriding IPrimitive.
     ~LimitedCylinder() override = default;
 
+    /// @brief Configures the limited cylinder with position, orientation, radius, height, and material.
+    /// @param params Unordered map of parameters: "x", "y", "z" (center of bottom cap), "ax", "ay", "az" (axis), "r" (radius), "h" (height).
+    /// @param mat Shared pointer to the cylinder material.
+    /// @throws std::invalid_argument If axis is zero, radius is non-positive, or height is non-positive.
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override {
         _center = { params.at("x"), params.at("y"), params.at("z") };
@@ -31,6 +39,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Computes the nearest ray-cylinder intersection (body and both caps).
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         std::optional<HitRecord> best = intersectBody(ray);
         auto capBot = intersectDisk(ray, _center, -_axis, _radius);
@@ -44,12 +55,15 @@ public:
     }
 
 private:
-    Vec3 _center;
-    Vec3 _axis;
-    double _height;
-    double _radius;
-    std::shared_ptr<IMaterial> _material;
+    Vec3 _center;                          ///< Center position of the bottom cap
+    Vec3 _axis;                            ///< Axis direction of the cylinder (from bottom to top)
+    double _height;                        ///< Height of the cylinder
+    double _radius;                        ///< Radius of the cylinder
+    std::shared_ptr<IMaterial> _material;  ///< Material of the cylinder
 
+    /// @brief Computes ray-cylinder body intersection (infinite cylinder, then clipped by height).
+    /// @param ray The ray to test for intersection.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersectBody(const Ray &ray) const {
         Vec3 dPrime = ray.direction - dot(ray.direction, _axis) * _axis;
         Vec3 vecOCPrime = (ray.origin - _center) - dot(ray.origin - _center, _axis) * _axis;
@@ -88,6 +102,12 @@ private:
         return HitRecord{t, point, normal, _material, frontFace, {u, v}, tangent, _axis};
     }
 
+    /// @brief Computes ray-disk intersection for cylinder caps.
+    /// @param ray The ray to test for intersection.
+    /// @param center Center of the disk.
+    /// @param outwardNormal Outward-facing normal of the disk.
+    /// @param radius Radius of the disk.
+    /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersectDisk(const Ray &ray, Vec3 center, Vec3 outwardNormal, double radius) const {
         double denom = dot(ray.direction, outwardNormal);
         if (std::abs(denom) < epsilon) return std::nullopt;
