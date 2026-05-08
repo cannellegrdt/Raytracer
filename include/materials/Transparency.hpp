@@ -25,6 +25,7 @@ public:
     /// @param hit Hit record with intersection details.
     /// @return ScatterResult containing attenuation color and transmitted ray.
     ScatterResult scatter(const Ray &ray, const HitRecord &hit) const override;
+    bool isTransmissive() const override { return true; }
 
 private:
     Color _color;  ///< Color attenuation applied to transmitted rays.

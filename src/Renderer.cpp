@@ -183,13 +183,26 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
             continue;
         }
 
-        Ray shadowRay{hit->point + RayBias * hit->normal, sample.direction};
-        auto blocker = closestHit(shadowRay, scene);
-        if (blocker && blocker->t < sample.distance)
-            continue;
+        Color shadowFilter{1.0, 1.0, 1.0};
+        {
+            Ray sRay{hit->point + RayBias * hit->normal, sample.direction};
+            double remaining = sample.distance;
+            bool fullyBlocked = false;
+            for (int si = 0; si < 8; ++si) {
+                auto blocker = closestHit(sRay, scene);
+                if (!blocker || blocker->t >= remaining) break;
+                if (!blocker->material->isTransmissive()) { fullyBlocked = true; break; }
+                ScatterResult s = blocker->material->scatter(sRay, *blocker);
+                shadowFilter = shadowFilter * s.attenuation;
+                if (!s.scatteredRay) { fullyBlocked = true; break; }
+                remaining -= blocker->t;
+                sRay = *s.scatteredRay;
+            }
+            if (fullyBlocked) continue;
+        }
 
         double diffuse = std::max(0.0, dot(hit->normal, sample.direction));
-        lightDiffuse += sample.color * diffuse;
+        lightDiffuse += sample.color * diffuse * shadowFilter;
 
         auto specularParams = hit->material->getSpecular();
         if (specularParams) {
@@ -197,13 +210,14 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
             Vec3 normalDir = normalize(-ray.direction);
             double specAngle = std::max(0.0, dot(refl, normalDir));
             double specular = std::pow(specAngle, specularParams->shininess);
-            lightSpecular += specularParams->ks * sample.color * specular;
+            lightSpecular += specularParams->ks * sample.color * specular * shadowFilter;
         }
     }
 
+    Color result = scattered.attenuation * lightDiffuse + lightSpecular;
     if (depth > 0 && scattered.scatteredRay) {
         Color indirect = traceRay(*scattered.scatteredRay, scene, depth - 1);
-        return scattered.attenuation * indirect;
+        result += scattered.attenuation * indirect;
     }
-    return scattered.attenuation * lightDiffuse + lightSpecular;
+    return result;
 }

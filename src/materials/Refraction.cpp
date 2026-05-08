@@ -20,15 +20,15 @@ ScatterResult Refraction::scatter(const Ray &ray, const HitRecord &hit) const {
     double etaRatio = (hit.frontFace) ? 1.0 / _ior : _ior;
 
     Vec3 dir = normalize(ray.direction);
-    double cosTheta = std::fmax(0.0, dot(-dir, hit.normal));
+    double cosTheta = std::fmin(1.0, std::fmax(0.0, dot(-dir, hit.normal)));
     double sinTheta = std::sqrt(1.0 - cosTheta * cosTheta);
 
     if (etaRatio * sinTheta > 1.0)
         return reflection(dir, hit, _color);
 
     Vec3 rPerp = etaRatio * (dir + cosTheta * hit.normal);
-    double lenSqrtRPerp = dot(rPerp, rPerp);
-    Vec3 rParallel = -std::sqrt(1.0 - lenSqrtRPerp) * hit.normal;
+    double rPerpLenSq = dot(rPerp, rPerp);
+    Vec3 rParallel = -std::sqrt(1.0 - rPerpLenSq) * hit.normal;
     Vec3 refractedDir = normalize(rPerp + rParallel);
 
     double r0 = ((1 - _ior) / (1 + _ior)) * ((1 - _ior) / (1 + _ior));

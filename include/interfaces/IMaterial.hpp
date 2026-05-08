@@ -27,6 +27,9 @@
         /// @return Optional SpecularParams (nullopt if material doesn't support specular highlights).
         virtual std::optional<SpecularParams> getSpecular() const { return std::nullopt; }
 
+        /// @brief Returns true if the material transmits light (e.g. transparency), allowing shadow rays to pass through.
+        virtual bool isTransmissive() const { return false; }
+
         virtual ~IMaterial() = default;
     };
 

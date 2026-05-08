@@ -43,17 +43,23 @@ void TexturedMaterial::loadPPM(const std::string &filePath) {
     if (!file.is_open())
         throw std::runtime_error("Cannot open texture file: " + filePath);
 
+    auto skipComments = [&]() {
+        std::string line;
+        while ((file >> std::ws).peek() == '#')
+            std::getline(file, line);
+    };
+
+    skipComments();
     std::string magic;
     file >> magic;
     if (magic != "P3")
         throw std::runtime_error("Only P3 PPM format is supported: " + filePath);
 
-    while (file.peek() == '#') {
-        std::string line;
-        std::getline(file, line);
-    }
-
-    file >> _width >> _height;
+    skipComments();
+    file >> _width;
+    skipComments();
+    file >> _height;
+    skipComments();
     int maxVal;
     file >> maxVal;
 
