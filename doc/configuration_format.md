@@ -399,14 +399,69 @@ material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
 | `"transparency"` | Transmits the ray through the surface; `color` tints |
 | `"refraction"` | Refracts rays according to Snell-Descartes law; `color` tints, `ior` = index of refraction |
 | `"phong"` | Diffuse + specular (Phong model); `color` = diffuse color, `specular` = specular color, `shininess` = α |
+| `"textured"` | Samples color from a PPM image file using UV coordinates; no secondary rays |
+| `"chessboard"` | Procedural checkerboard pattern calculated from 3D hit position; no secondary rays |
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `type` | string | One of `"flat"`, `"reflection"`, `"transparency"`, `"refraction"`, `"phong"` |
+| `type` | string | One of `"flat"`, `"reflection"`, `"transparency"`, `"refraction"`, `"phong"`, `"textured"`, `"chessboard"` |
 | `color` | Color | RGB in `[0.0, 1.0]` (diffuse color for phong) |
 | `ior` | double | Index of refraction, > 0 (only for `"refraction"`; common values: air ≈ 1.0, water ≈ 1.33, glass ≈ 1.5) |
 | `specular` | Color | RGB specular highlight color (only for `"phong"`) |
 | `shininess` | double | Shininess exponent > 0 (only for `"phong"`) |
+| `texture` | string | Path to a PPM image file (only for `"textured"`) |
+| `colorA` | Color | First checkerboard color (only for `"chessboard"`) |
+| `colorB` | Color | Second checkerboard color (only for `"chessboard"`) |
+| `scale` | double | Size of checkerboard cells, > 0 (only for `"chessboard"`; default: 1.0) |
+
+### Textured material
+
+The `"textured"` material reads pixel color from a **PPM image** (P3 format) using the UV coordinates provided by the primitive at the hit point.
+
+```cfg
+material = {
+    type = "textured";
+    texture = "textures/earth.ppm";
+};
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `texture` | string | Path to the PPM file (P3 ASCII format, relative to the working directory) |
+
+**Supported format:** P3 ASCII PPM only. Binary PPM (P6) is not supported.
+
+**Fallback:** If the file cannot be opened, the material falls back to a magenta color (`1.0, 0.0, 1.0`) so missing textures are immediately visible without crashing.
+
+**UV mapping:** Each primitive exposes UV coordinates at the hit point. The image is tiled (wraps around) when UV values go outside `[0, 1]`.
+
+---
+
+### Procedural checkerboard
+
+The `"chessboard"` material computes colors analytically from the 3D hit position — no texture file or UV mapping needed.
+
+**How it works:**
+- The 3D point of intersection is divided by `scale` and floored to integer grid coordinates `(ix, iy, iz)`
+- A parity bit is computed: `(ix & 1) ^ (iy & 1) ^ (iz & 1)` (bitwise XOR, safe with negative values)
+- If the result is `0`, `colorA` is used; otherwise `colorB`
+
+```cfg
+material = {
+    type = "chessboard";
+    colorA = { r = 1.0; g = 1.0; b = 1.0; };
+    colorB = { r = 0.0; g = 0.0; b = 0.0; };
+    scale = 2.0;
+};
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `colorA` | Color | First checkerboard color (RGB in `[0.0, 1.0]`) |
+| `colorB` | Color | Second checkerboard color (RGB in `[0.0, 1.0]`) |
+| `scale` | double | Cell size in world units; smaller = more tiles (default: 1.0) |
+
+**Note:** Unlike texture-based checkers, this is a true 3D pattern — it wraps around spheres, cylinders, and any primitive naturally.
 
 ---
 

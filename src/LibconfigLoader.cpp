@@ -23,6 +23,7 @@
 #include "PointLight.hpp"
 #include "PhongMaterial.hpp"
 #include "TexturedMaterial.hpp"
+#include "ProceduralCheckerboard.hpp"
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
@@ -51,6 +52,28 @@ static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
     if (type == "textured") {
         std::string texturePath = mat["texture"].c_str();
         return std::make_shared<TexturedMaterial>(texturePath);
+    }
+    if (type == "chessboard") {
+        Color colorA;
+        Color colorB;
+        double scale = 1.0;
+        if (mat.exists("colorA")) {
+            colorA = {
+                toDouble(mat["colorA"]["r"]),
+                toDouble(mat["colorA"]["g"]),
+                toDouble(mat["colorA"]["b"])
+            };
+        }
+        if (mat.exists("colorB")) {
+            colorB = {
+                toDouble(mat["colorB"]["r"]),
+                toDouble(mat["colorB"]["g"]),
+                toDouble(mat["colorB"]["b"])
+            };
+        }
+        if (mat.exists("scale"))
+            scale = toDouble(mat["scale"]);
+        return std::make_shared<ProceduralCheckerboard>(colorA, colorB, scale);
     }
     Color color{
         toDouble(mat["color"]["r"]),
