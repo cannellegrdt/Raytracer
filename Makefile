@@ -24,8 +24,8 @@ PLUGIN_SRCS	:=	$(wildcard src/plugins/*.cpp)
 PLUGINS	:=	$(patsubst src/plugins/%.cpp,plugins/%.so,$(PLUGIN_SRCS))
 
 TEST_DIR	:=	tests/unit_tests
-TEST_SRCS	:=	$(wildcard $(TEST_DIR)/*.cpp)
-TEST_OBJ	:=	$(TEST_SRCS:.cpp=.o)
+TEST_SRCS	:=	$(shell find $(TEST_DIR) -name "*.cpp")
+TEST_OBJ	:=	$(patsubst %.cpp,%.o,$(TEST_SRCS))
 
 MAIN_OBJ	:=	src/main.o
 LIB_OBJ	:=	$(filter-out $(MAIN_OBJ),$(OBJ))
@@ -50,7 +50,7 @@ all: $(NAME) $(PLUGINS)
 $(NAME): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-$(TEST_DIR)/%.o: $(TEST_DIR)/%.cpp
+$(TEST_OBJ): %.o: %.cpp
 	$(CXX) $(filter-out -Werror,$(CXXFLAGS)) -DUNIT_TEST -c $< -o $@
 
 %.o: %.cpp
