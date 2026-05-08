@@ -87,7 +87,7 @@ public:
 
 private:
     PrimitivePtr _inner;   ///< Wrapped primitive.
-    Mat4 _transformMatrix; ///< Matrix world->local
+    Mat4 _transformMatrix; ///< Matrix local->world
     Mat4 _invMatrix;       ///< Inverse matrix.
 };
 
