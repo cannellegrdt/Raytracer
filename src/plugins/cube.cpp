@@ -1,0 +1,106 @@
+/*
+ * Project: Raytracer
+ * File name: cube.cpp
+ * Author: Cannelle Gourdet - lankley
+ * File description: Axis-aligned cube primitive plugin implementing ray-cube intersection via slab method.
+ */
+
+#include "IPrimitive.hpp"
+#include "IMaterial.hpp"
+#include "Vec3.hpp"
+
+class Cube : public IPrimitive {
+public:
+    Cube() : _min(0, 0, 0), _max(1, 1, 1), _material(nullptr) {}
+    ~Cube() override = default;
+
+    void configure(const std::unordered_map<std::string, double> &params,
+        std::shared_ptr<IMaterial> mat) override {
+        Vec3 center = { params.at("x"), params.at("y"), params.at("z") };
+        double size = params.at("s");
+        if (size <= 0.0)
+            throw std::invalid_argument("Cube size must be > 0");
+        double halfSize = size / 2.0;
+        _min = center - Vec3(halfSize, halfSize, halfSize);
+        _max = center + Vec3(halfSize, halfSize, halfSize);
+        _material = std::move(mat);
+    }
+
+    std::optional<HitRecord> intersect(const Ray &ray) const override {
+        double tXMin, tXMax;
+        if (ray.direction.x >= 0) {
+            tXMin = (_min.x - ray.origin.x) / ray.direction.x;
+            tXMax = (_max.x - ray.origin.x) / ray.direction.x;
+        } else {
+            tXMin = (_max.x - ray.origin.x) / ray.direction.x;
+            tXMax = (_min.x - ray.origin.x) / ray.direction.x;
+        }
+
+        double tYMin, tYMax;
+        if (ray.direction.y >= 0) {
+            tYMin = (_min.y - ray.origin.y) / ray.direction.y;
+            tYMax = (_max.y - ray.origin.y) / ray.direction.y;
+        } else {
+            tYMin = (_max.y - ray.origin.y) / ray.direction.y;
+            tYMax = (_min.y - ray.origin.y) / ray.direction.y;
+        }
+
+        if (tXMin > tYMax || tYMin > tXMax)
+            return std::nullopt;
+        if (tYMin > tXMin) tXMin = tYMin;
+        if (tYMax < tXMax) tXMax = tYMax;
+
+        double tZMin, tZMax;
+        if (ray.direction.z >= 0) {
+            tZMin = (_min.z - ray.origin.z) / ray.direction.z;
+            tZMax = (_max.z - ray.origin.z) / ray.direction.z;
+        } else {
+            tZMin = (_max.z - ray.origin.z) / ray.direction.z;
+            tZMax = (_min.z - ray.origin.z) / ray.direction.z;
+        }
+
+        if (tXMin > tZMax || tZMin > tXMax)
+            return std::nullopt;
+        if (tZMin > tXMin) tXMin = tZMin;
+        if (tZMax < tXMax) tXMax = tZMax;
+
+        double t = tXMin;
+        if (t < epsilon)
+            t = tXMax;
+        if (t < epsilon)
+            return std::nullopt;
+
+        Vec3 point = ray.at(t);
+        Vec3 normal = computeNormal(point);
+        bool frontFace = dot(ray.direction, normal) < 0.0;
+        if (!frontFace)
+            normal = -normal;
+
+        double u = (point.x - _min.x) / (_max.x - _min.x);
+        double v = (point.y - _min.y) / (_max.y - _min.y);
+
+        Vec3 tangent(1, 0, 0);
+        Vec3 bitangent(0, 1, 0);
+
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}, tangent, bitangent};
+    };
+
+private:
+    Vec3 _min;
+    Vec3 _max;
+    std::shared_ptr<IMaterial> _material;
+
+    Vec3 computeNormal(const Vec3 &point) const {
+        double eps = 1e-6;
+        if (std::abs(point.x - _min.x) < eps) return Vec3(-1, 0, 0);
+        if (std::abs(point.x - _max.x) < eps) return Vec3(1, 0, 0);
+        if (std::abs(point.y - _min.y) < eps) return Vec3(0, -1, 0);
+        if (std::abs(point.y - _max.y) < eps) return Vec3(0, 1, 0);
+        if (std::abs(point.z - _min.z) < eps) return Vec3(0, 0, -1);
+        if (std::abs(point.z - _max.z) < eps) return Vec3(0, 0, 1);
+        return Vec3(0, 1, 0);
+    }
+};
+
+extern "C" IPrimitive *create() { return new Cube(); };
+extern "C" void destroy(IPrimitive *p) { delete p; };

@@ -17,6 +17,8 @@ Files are parsed by **libconfig++** and loaded by `LibconfigLoader`.
     3.5. [Cone (infinite)](#cone-infinite)
     3.6. [Limited cone](#limited-cone)
     3.7. [Torus](#torus)
+    3.8. [Cube](#cube)
+    3.9. [Tanglecube](#tanglecube)
 4. [Transforms on primitives](#4-transforms-on-primitives)
 5. [Groups (scene graph)](#5-groups-scene-graph)
 6. [Materials](#6-materials)
@@ -86,7 +88,12 @@ primitives = {
     spheres = ( ... );
     planes = ( ... );
     cylinders = ( ... );
-    ...
+    limited_cylinders = ( ... );
+    cones = ( ... );
+    limited_cones = ( ... );
+    torus = ( ... );
+    cubes = ( ... );
+    tanglecubes = ( ... );
 };
 ```
 
@@ -246,6 +253,59 @@ torus = (
 - If `r > R`, the values are automatically swapped to ensure `R >= r`
 - The axis defines the orientation of the torus; the tube circles around this axis
 - UV coordinates are generated: `u` from the angle around the major radius, `v` from the angle around the tube
+
+---
+
+### Cube
+
+```cfg
+cubes = (
+    {
+        x = 0.0; y = 0.0; z = 0.0;
+        s = 2.0;
+        material = { type = "flat"; color = { r = 0.8; g = 0.4; b = 0.2; }; };
+    }
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `x`, `y`, `z` | double | Center of the cube |
+| `s` | double | Size (side length) of the cube (> 0); the cube extends ±s/2 from center on each axis |
+| `material` | Material | Surface material |
+
+**Notes:**
+- The cube is axis-aligned; the bounds are `[x-s/2, x+s/2] × [y-s/2, y+s/2] × [z-s/2, z+s/2]`
+- UV coordinates are generated: `u = (point.x - min.x) / (max.x - min.x)`, `v = (point.y - min.y) / (max.y - min.y)`
+- Normal is computed based on which face was hit (±X, ±Y, or ±Z)
+- Tangent `(1,0,0)` and bitangent `(0,1,0)` are provided for normal mapping
+
+---
+
+### TangleCube
+
+```cfg
+tanglecubes = (
+    {
+        x = 0.0; y = 0.0; z = 0.0;
+        s = 1.5;
+        material = { type = "flat"; color = { r = 0.8; g = 0.4; b = 0.2; }; };
+    }
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `x`, `y`, `z` | double | Center of the tanglecube |
+| `s` | double | Scale of the tanglecube (> 0); controls the size of the implicit surface |
+| `material` | Material | Surface material |
+
+**Notes:**
+- The tanglecube is an implicit surface defined by the equation: `x⁴ - 5x² + y⁴ - 5y² + z⁴ - 5z² + 11.8 = 0`
+- The surface is rendered using ray marching with 2000 steps and binary refinement (30 iterations)
+- UV coordinates are generated: `u` from `atan2(z, x)` (longitude), `v` from `asin(y/length)` (latitude)
+- Tangent and bitangent are computed from the normal and world up vector for normal mapping support
+- The bounding sphere has radius 2.5 for ray intersection culling
 
 ---
 
@@ -720,6 +780,15 @@ primitives = {
             x = 0.0; y = -1.0; z = 0.0;
             nx = 0.0; ny = 1.0; nz = 0.0;
             material = { type = "flat"; color = { r = 0.6; g = 0.6; b = 0.6; }; };
+        }
+    );
+
+    # A cube in the center
+    cubes = (
+        {
+            x = 0.0; y = 0.0; z = 3.0;
+            s = 1.5;
+            material = { type = "phong"; color = { r = 0.2; g = 0.6; b = 0.8; }; specular = { r = 1.0; g = 1.0; b = 1.0; }; shininess = 32.0; };
         }
     );
 
