@@ -17,7 +17,7 @@ public:
         : _color(diffuseColor), _specularParams{specularColor, shininess} {}
 
     ScatterResult scatter(const Ray &/*ray*/, const HitRecord &/*hit*/) const override {
-        return ScatterResult{_color, std::nullopt};
+        return ScatterResult{_color, std::nullopt, std::nullopt};
     }
 
     std::optional<SpecularParams> getSpecular() const override {
@@ -25,8 +25,8 @@ public:
     }
 
 private:
-    Color _color;
-    SpecularParams _specularParams;
+    Color _color;                    ///< Diffuse color of the material.
+    SpecularParams _specularParams;  ///< Specular reflection parameters (color and shininess).
 };
 
 #endif /* PHONGMATERIAL_HPP_ */

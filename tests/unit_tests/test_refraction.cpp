@@ -23,7 +23,7 @@ static bool vec3_near(const Vec3 &a, const Vec3 &b) {
 }
 
 static HitRecord makeHit(Vec3 point, Vec3 normal, bool frontFace = true) {
-    return HitRecord{1.0, point, normalize(normal), nullptr, frontFace};
+    return HitRecord{1.0, point, normalize(normal), nullptr, frontFace, {0.0, 0.0}, Vec3(0,0,0), Vec3(0,0,0)};
 }
 
 Test(refraction, returns_refracted_ray) {

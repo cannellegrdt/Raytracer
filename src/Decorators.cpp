@@ -2,7 +2,7 @@
  * Project: Raytracer
  * File name: Decorators.cpp
  * Author: Cannelle Gourdet - lankley
- * File description: ...
+ * File description: Decorator primitives implementing translation, rotation, scale, shear, and custom matrix transforms.
  */
 
 #include "Decorators.hpp"
@@ -64,10 +64,11 @@ std::optional<HitRecord> ScaleDecorator::intersect(const Ray &ray) const {
     if (hit == std::nullopt) return std::nullopt;
 
     Vec3 worldPoint = {hit->point.x * _scale.x, hit->point.y * _scale.y, hit->point.z * _scale.z};
-    Vec3 rawNormal = {hit->normal.x / _scale.x, hit->normal.y / _scale.y, hit->normal.z / _scale.z};
-    Vec3 worldNormal = normalize(rawNormal);
+    Vec3 worldNormal = normalize({hit->normal.x / _scale.x, hit->normal.y / _scale.y, hit->normal.z / _scale.z});
+    Vec3 worldTangent = normalize({hit->tangent.x / _scale.x, hit->tangent.y / _scale.y, hit->tangent.z / _scale.z});
+    Vec3 worldBitangent = normalize({hit->bitangent.x / _scale.x, hit->bitangent.y / _scale.y, hit->bitangent.z / _scale.z});
 
-    return HitRecord{hit->t, worldPoint, worldNormal, hit->material, hit->frontFace, hit->UV};
+    return HitRecord{hit->t, worldPoint, worldNormal, hit->material, hit->frontFace, hit->UV, worldTangent, worldBitangent};
 }
 
 ShearDecorator::ShearDecorator(PrimitivePtr inner, double sxy, double sxz, double syx, double syz, double szx, double szy)

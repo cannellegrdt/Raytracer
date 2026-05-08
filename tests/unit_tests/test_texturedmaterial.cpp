@@ -23,7 +23,7 @@ static bool vec3_near(const Vec3 &a, const Vec3 &b) {
 }
 
 static HitRecord makeHit(Vec3 point, Vec3 normal, double u, double v) {
-    return HitRecord{1.0, point, normalize(normal), nullptr, true, {u, v}};
+    return HitRecord{1.0, point, normalize(normal), nullptr, true, {u, v}, Vec3(0,0,0), Vec3(0,0,0)};
 }
 
 Test(texturedmaterial, load_valid_ppm_no_throw) {

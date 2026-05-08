@@ -1,20 +1,22 @@
 /*
  * Project: Raytracer
- * File name: TexturedMaterial.cpp
+ * File name: NormalMapMaterial.cpp
  * Author: Cannelle Gourdet - lankley
- * File description: Textured material implementation; loads PPM image and samples color using UV.
+ * File description: Normal map material implementation that perturbs surface normals using a texture.
  */
 
-#include "TexturedMaterial.hpp"
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
+#include "NormalMapMaterial.hpp"
 
-TexturedMaterial::TexturedMaterial(const std::string &filePath) {
+NormalMapMaterial::NormalMapMaterial(std::shared_ptr<IMaterial> baseMaterial, const std::string &normalMapPath)
+    : _baseMaterial(std::move(baseMaterial)) {
     try {
-        loadPPM(filePath);
-    } catch (const std::runtime_error& e) {
+        loadPPM(normalMapPath);
+    } catch (const std::runtime_error &e) {
         if (std::string(e.what()).find("Cannot open texture file") != std::string::npos) {
             _pixels.clear();
             _width = 0;
@@ -25,20 +27,29 @@ TexturedMaterial::TexturedMaterial(const std::string &filePath) {
     }
 }
 
-ScatterResult TexturedMaterial::scatter(const Ray &/*ray*/, const HitRecord &hit) const {
-    if (_pixels.empty())
-        return ScatterResult{Color{1.0, 0.0, 1.0}, std::nullopt, std::nullopt};
+ScatterResult NormalMapMaterial::scatter(const Ray &ray, const HitRecord &hit) const {
+    ScatterResult result = _baseMaterial->scatter(ray, hit);
+
+    if (_pixels.empty() || length(hit.tangent) < epsilon || length(hit.bitangent) < epsilon)
+        return result;
 
     int px = static_cast<int>(hit.UV.first * _width) % _width;
+    if (px < 0)
+        px += _width;
     int py = static_cast<int>(hit.UV.second * _height) % _height;
-    if (px < 0) px += _width;
-    if (py < 0) py += _height;
+    if (py < 0)
+        py += _height;
 
-    Color color = _pixels[py * _width + px];
-    return ScatterResult{color, std::nullopt, std::nullopt};
+    Color texColor = _pixels[py * _width + px];
+    Vec3 nTangent = normalize(2.0 * Vec3(texColor.x, texColor.y, texColor.z) - Vec3(1.0, 1.0, 1.0));
+
+    Vec3 nWorld = normalize(hit.tangent * nTangent.x + hit.bitangent * nTangent.y + hit.normal * nTangent.z);
+    result.modifiedNormal = nWorld;
+
+    return result;
 }
 
-void TexturedMaterial::loadPPM(const std::string &filePath) {
+void NormalMapMaterial::loadPPM(const std::string &filePath) {
     std::ifstream file(filePath);
     if (!file.is_open())
         throw std::runtime_error("Cannot open texture file: " + filePath);
@@ -48,8 +59,8 @@ void TexturedMaterial::loadPPM(const std::string &filePath) {
         while ((file >> std::ws).peek() == '#')
             std::getline(file, line);
     };
-
     skipComments();
+
     std::string magic;
     file >> magic;
     if (magic != "P3")
@@ -63,8 +74,11 @@ void TexturedMaterial::loadPPM(const std::string &filePath) {
     int maxVal;
     file >> maxVal;
 
-    _pixels.resize(_width * _height);
-    for (int i = 0; i < _width * _height; ++i) {
+    long long size = _width * _height;
+
+    _pixels.resize(size);
+
+    for (long long i=0; i<size; i++) {
         int r, g, b;
         if (!(file >> r >> g >> b))
             throw std::runtime_error("Invalid PPM pixel data in: " + filePath);

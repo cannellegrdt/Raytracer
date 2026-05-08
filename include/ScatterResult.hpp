@@ -13,8 +13,9 @@
 
 /// @brief Result of a material's scatter operation.
 struct ScatterResult {
-    Vec3 attenuation;                 ///< Color attenuation (how much light is reflected/transmitted).
-    std::optional<Ray> scatteredRay;  ///< New ray after scattering (empty if absorbed).
+    Vec3 attenuation;                   ///< Color attenuation (how much light is reflected/transmitted).
+    std::optional<Ray> scatteredRay;    ///< New ray after scattering (empty if absorbed).
+    std::optional<Vec3> modifiedNormal; ///< Optional modified normal (e.g., from normal mapping) for lighting calculations.
 };
 
 #endif /* SCATTERRESULT_HPP_ */

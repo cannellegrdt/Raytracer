@@ -161,6 +161,8 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
 
     ScatterResult scattered = hit->material->scatter(ray, *hit);
 
+    Vec3 effectiveNormal = (scattered.modifiedNormal.has_value()) ? *scattered.modifiedNormal : hit->normal;
+
     Color lightDiffuse{0, 0, 0};
     Color lightSpecular{0, 0, 0};
     for (const auto &light : scene.lights()) {
@@ -201,12 +203,12 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
             if (fullyBlocked) continue;
         }
 
-        double diffuse = std::max(0.0, dot(hit->normal, sample.direction));
+        double diffuse = std::max(0.0, dot(effectiveNormal, sample.direction));
         lightDiffuse += sample.color * diffuse * shadowFilter;
 
         auto specularParams = hit->material->getSpecular();
         if (specularParams) {
-            Vec3 refl = reflect(-sample.direction, hit->normal);
+            Vec3 refl = reflect(-sample.direction, effectiveNormal);
             Vec3 normalDir = normalize(-ray.direction);
             double specAngle = std::max(0.0, dot(refl, normalDir));
             double specular = std::pow(specAngle, specularParams->shininess);

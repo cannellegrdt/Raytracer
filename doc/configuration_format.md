@@ -402,6 +402,8 @@ material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
 | `"textured"` | Samples color from a PPM image file using UV coordinates; no secondary rays |
 | `"chessboard"` | Procedural checkerboard pattern calculated from 3D hit position; no secondary rays |
 | `"marble"` | Procedural marble-like pattern using Perlin noise; `colorA`/`colorB` = vein colors, `scale` = sine frequency, `turbulence` = noise amplitude, `octaves` = detail level; no secondary rays |
+| `"normalmap"` | Uses a normal map texture to perturb surface normals for lighting; wraps a base material |
+| `"normalmap"` | Uses a normal map texture to perturb surface normals for lighting; wraps a base material |
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -500,6 +502,50 @@ material = {
 | `seed` | int | Random seed for the permutation table; different values produce different vein patterns (default: 0) |
 
 **Note:** `scale` here controls the frequency of the sine wave along the Z axis, not a cell size as in `"chessboard"`. To orient the veins along a different axis, apply a `rotation` transform to the primitive.
+
+---
+
+### Normal map material
+
+The `"normalmap"` material wraps a **base material** and uses a normal map texture to perturb surface normals for lighting calculations. This creates the illusion of surface detail (bumps, grooves) without adding geometric complexity.
+
+**How it works:**
+- The base material provides the surface appearance (color, reflection, etc.)
+- A normal map texture (PPM P3 format) encodes perturbed normals in tangent space
+- At each hit point, the normal is read from the texture and transformed from tangent space to world space using the TBN matrix
+- The perturbed normal affects diffuse and specular lighting calculations
+
+**Requirements:**
+- The primitive must provide tangent (`T`) and bitangent (`B`) vectors (spheres, planes, cylinders, and cones all support this)
+- The normal map image uses RGB channels to encode XYZ components of the tangent-space normal: `n_tangent = 2 * color - 1`
+- Images are typically blue-tinted because the Z component (stored in blue) is dominant
+
+```cfg
+material = {
+    type = "normalmap";
+    normalmap = "textures/normal_brick.ppm";
+    base = {
+        type = "phong";
+        color = { r = 0.8; g = 0.8; b = 0.8; };
+        specular = { r = 1.0; g = 1.0; b = 1.0; };
+        shininess = 32;
+    };
+};
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `normalmap` | string | Path to the normal map PPM file (P3 ASCII format) |
+| `base` | Material | The underlying material that defines surface properties (required) |
+
+**Supported base materials:** Any material type (`"flat"`, `"phong"`, `"textured"`, `"reflection"`, `"refraction"`, `"chessboard"`, `"marble"`) can be used as the base.
+
+**Fallback:** If the normal map file cannot be opened, the material falls back to using the base material with unmodified normals (no crash).
+
+**Creating normal maps:** Normal maps are typically generated from height maps or 3D models. The RGB values represent:
+- Red channel → X component in tangent space (left/right)
+- Green channel → Y component in tangent space (up/down)
+- Blue channel → Z component in tangent space (surface normal direction, typically ~0.5-1.0)
 
 ---
 

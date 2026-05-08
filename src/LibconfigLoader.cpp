@@ -25,6 +25,7 @@
 #include "TexturedMaterial.hpp"
 #include "ProceduralCheckerboard.hpp"
 #include "ProceduralMarble.hpp"
+#include "NormalMapMaterial.hpp"
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
@@ -58,7 +59,7 @@ static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
         Color colorA;
         Color colorB;
         double scale = 1.0;
-        double turbulence = 1.0; /* trouver un nombre par défaut */
+        double turbulence = 1.0;
         int octaves = 1.0;
         if (mat.exists("colorA")) {
             colorA = {
@@ -85,6 +86,15 @@ static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
             return std::make_shared<ProceduralCheckerboard>(colorA, colorB, scale);
         return std::make_shared<ProceduralMarble>(colorA, colorB, scale, turbulence, octaves);
     }
+    if (type == "normalmap") {
+        std::string normalMapPath = mat["normalmap"].c_str();
+        
+        if (!mat.exists("base"))
+            throw std::runtime_error("NormalMap material requires a 'base' material definition");
+        auto baseMaterial = buildMaterial(mat["base"]);
+        
+        return std::make_shared<NormalMapMaterial>(baseMaterial, normalMapPath);
+    }
     Color color{
         toDouble(mat["color"]["r"]),
         toDouble(mat["color"]["g"]),
@@ -102,7 +112,7 @@ static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
             toDouble(mat["specular"]["g"]),
             toDouble(mat["specular"]["b"])
         };
-        return std::make_shared<PhongMaterial>(color, specColor, mat["shininess"]);
+        return std::make_shared<PhongMaterial>(color, specColor, toDouble(mat["shininess"]));
     }
     if (type == "refraction") {
         double ior = 1.5;

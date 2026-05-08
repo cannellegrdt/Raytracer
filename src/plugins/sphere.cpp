@@ -48,7 +48,11 @@ public:
         double u = 0.5 + std::atan2(pHat.z, pHat.x) / (2 * M_PI);
         double v = 0.5 - std::asin(pHat.y) / M_PI;
 
-        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
+        Vec3 up(0, 1, 0);
+        Vec3 tangent = (std::abs(pHat.y) > 0.999) ? Vec3(1, 0, 0) : normalize(cross(pHat, up));
+        Vec3 bitangent = normalize(cross(pHat, tangent));
+
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}, tangent, bitangent};
     };
 
 private:

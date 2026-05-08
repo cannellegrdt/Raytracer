@@ -47,7 +47,7 @@ public:
         double v = dot(radial, tan2);
         v -= std::floor(v);
 
-        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}, tan1, tan2};
     };
 
 private:

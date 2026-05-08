@@ -83,7 +83,9 @@ private:
         if (u < 0.0)
             u += 1.0;
         double v = h / _height;
-        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
+        Vec3 outwardRadial = normalize(radial - h * _axis);
+        Vec3 tangent = normalize(cross(outwardRadial, _axis));
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}, tangent, _axis};
     }
 
     std::optional<HitRecord> intersectDisk(const Ray &ray, Vec3 center, Vec3 outwardNormal, double radius) const {
@@ -110,7 +112,7 @@ private:
         double v = std::sqrt(dot(diff, diff)) / radius;
         v -= std::floor(v);
 
-        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}, tangent, biTangent};
     }
 };
 

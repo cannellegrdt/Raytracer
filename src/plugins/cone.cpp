@@ -67,7 +67,9 @@ public:
         if (v < 0.0)
             v += 1.0;
         
-        return HitRecord{t, point, normal, _material, frontFace, {u, v}};
+        Vec3 horizontalRadial = normalize(radial - h * _axis);
+        Vec3 tangent = normalize(cross(horizontalRadial, _axis));
+        return HitRecord{t, point, normal, _material, frontFace, {u, v}, tangent, _axis};
     };
 
 private:

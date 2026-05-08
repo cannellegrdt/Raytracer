@@ -39,7 +39,7 @@ static PrimitivePtr makeStub(StubPrimitive *&outPtr) {
 }
 
 static HitRecord makeHit(double t, Vec3 point, Vec3 normal) {
-    return HitRecord{t, point, normalize(normal), nullptr, true};
+    return HitRecord{t, point, normalize(normal), nullptr, true, {0.0, 0.0}, Vec3(0,0,0), Vec3(0,0,0)};
 }
 
 Test(groupnode, default_constructor_creates_empty_group) {

@@ -22,7 +22,7 @@ static bool vec3_near(const Vec3 &a, const Vec3 &b) {
 }
 
 static HitRecord makeHit(Vec3 point, Vec3 normal) {
-    return HitRecord{1.0, point, normalize(normal), nullptr, true};
+    return HitRecord{1.0, point, normalize(normal), nullptr, true, {0.0, 0.0}, Vec3(0,0,0), Vec3(0,0,0)};
 }
 
 Test(proceduralmarble, constructor_creates_valid_instance) {

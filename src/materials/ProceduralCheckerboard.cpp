@@ -15,6 +15,6 @@ ScatterResult ProceduralCheckerboard::scatter(const Ray &/*ray*/, const HitRecor
     int iXOR = (ix & 1) ^ (iy & 1) ^ (iz & 1);
 
     if (iXOR == 0)
-        return ScatterResult{_colors.first, std::nullopt};
-    return ScatterResult{_colors.second, std::nullopt};
+        return ScatterResult{_colors.first, std::nullopt, std::nullopt};
+    return ScatterResult{_colors.second, std::nullopt, std::nullopt};
 }

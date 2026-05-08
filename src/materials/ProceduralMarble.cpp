@@ -2,7 +2,7 @@
  * Project: Raytracer
  * File name: ProceduralMarble.cpp
  * Author: Cannelle Gourdet - lankley
- * File description: ...
+ * File description: Procedural marble material using fractal noise for realistic stone patterns.
  */
 
 #include "ProceduralMarble.hpp"
@@ -12,5 +12,5 @@ ScatterResult ProceduralMarble::scatter(const Ray &/*ray*/, const HitRecord &hit
     noise = (noise + 1.0) / 2.0;
     
     Color color = _colors.first * (1.0 - noise) + _colors.second * noise;
-    return ScatterResult{color, std::nullopt};
+    return ScatterResult{color, std::nullopt, std::nullopt};
 }
