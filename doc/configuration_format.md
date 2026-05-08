@@ -19,6 +19,7 @@ Files are parsed by **libconfig++** and loaded by `LibconfigLoader`.
     3.7. [Torus](#torus)
     3.8. [Cube](#cube)
     3.9. [Tanglecube](#tanglecube)
+    3.10. [Triangle](#triangle)
 4. [Transforms on primitives](#4-transforms-on-primitives)
 5. [Groups (scene graph)](#5-groups-scene-graph)
 6. [Materials](#6-materials)
@@ -306,6 +307,35 @@ tanglecubes = (
 - UV coordinates are generated: `u` from `atan2(z, x)` (longitude), `v` from `asin(y/length)` (latitude)
 - Tangent and bitangent are computed from the normal and world up vector for normal mapping support
 - The bounding sphere has radius 2.5 for ray intersection culling
+
+---
+
+### Triangle
+
+```cfg
+triangles = (
+    {
+        v0x = -1.0; v0y = 0.0; v0z = 0.0;
+        v1x = 0.0; v1y = 2.0; v1z = 0.0;
+        v2x = 1.0; v2y = 0.0; v2z = 0.0;
+        material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
+    }
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `v0x`, `v0y`, `v0z` | double | First vertex position |
+| `v1x`, `v1y`, `v1z` | double | Second vertex position |
+| `v2x`, `v2y`, `v2z` | double | Third vertex position |
+| `material` | Material | Surface material |
+
+**Notes:**
+- The normal is computed automatically from the cross product of edges `(v1-v0)` and `(v2-v0)`
+- The normal direction follows the right-hand rule: counter-clockwise vertex order gives normal pointing toward viewer
+- UV coordinates are generated: `u` and `v` from the barycentric coordinates of the hit point
+- Tangent and bitangent vectors are provided for normal mapping support
+- The triangle supports all transform types: translation, rotation, scale, shear, and transformation_matrix
 
 ---
 
