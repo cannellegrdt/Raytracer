@@ -178,6 +178,7 @@ static const std::unordered_map<std::string, std::string> kMapTablePrim = {
     {"limited_cylinders", "limited_cylinder"},
     {"cones", "cone"},
     {"limited_cones", "limited_cone"},
+    {"torus", "torus"},
 };
 
 static const std::unordered_map<std::string, std::vector<std::string>> kPrimFields = {
@@ -187,6 +188,7 @@ static const std::unordered_map<std::string, std::vector<std::string>> kPrimFiel
     {"limited_cylinder", {"x", "y", "z", "ax", "ay", "az", "r", "h"}},
     {"cone", {"x", "y", "z", "ax", "ay", "az", "angle"}},
     {"limited_cone", {"x", "y", "z", "ax", "ay", "az", "angle", "h"}},
+    {"torus", {"x", "y", "z", "ax", "ay", "az", "R", "r"}},
 };
 
 static std::vector<PrimitivePtr> parsePrimitivesBlock(

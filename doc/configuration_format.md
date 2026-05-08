@@ -10,12 +10,13 @@ Files are parsed by **libconfig++** and loaded by `LibconfigLoader`.
 1. [File extension & structure](#1-file-extension--structure)
 2. [Camera](#2-camera)
 3. [Primitives](#3-primitives)
-   - [Sphere](#sphere)
-   - [Plane](#plane)
-   - [Cylinder (infinite)](#cylinder-infinite)
-   - [Limited cylinder](#limited-cylinder)
-   - [Cone (infinite)](#cone-infinite)
-   - [Limited cone](#limited-cone)
+    3.1. [Sphere](#sphere)
+    3.2. [Plane](#plane)
+    3.3. [Cylinder (infinite)](#cylinder-infinite)
+    3.4. [Limited cylinder](#limited-cylinder)
+    3.5. [Cone (infinite)](#cone-infinite)
+    3.6. [Limited cone](#limited-cone)
+    3.7. [Torus](#torus)
 4. [Transforms on primitives](#4-transforms-on-primitives)
 5. [Groups (scene graph)](#5-groups-scene-graph)
 6. [Materials](#6-materials)
@@ -217,6 +218,34 @@ Same as `cones` with one extra field:
 | Field | Type | Description |
 |-------|------|-------------|
 | `h` | double | Height (> 0), measured from apex along the axis |
+
+---
+
+### Torus
+
+```cfg
+torus = (
+    {
+        x = 0.0; y = 0.0; z = 0.0;
+        ax = 0.0; ay = 1.0; az = 0.0;
+        R = 2.0; r = 0.5;
+        material = { type = "flat"; color = { r = 0.8; g = 0.4; b = 0.2; }; };
+    }
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `x`, `y`, `z` | double | Center of the torus (center of the tube's circular path) |
+| `ax`, `ay`, `az` | double | Axis direction (auto-normalized) |
+| `R` | double | Major radius - distance from center to the center of the tube (> 0) |
+| `r` | double | Minor radius - radius of the tube (> 0) |
+| `material` | Material | Surface material |
+
+**Notes:**
+- If `r > R`, the values are automatically swapped to ensure `R >= r`
+- The axis defines the orientation of the torus; the tube circles around this axis
+- UV coordinates are generated: `u` from the angle around the major radius, `v` from the angle around the tube
 
 ---
 
