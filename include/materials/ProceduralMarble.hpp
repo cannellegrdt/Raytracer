@@ -2,7 +2,7 @@
  * Project: Raytracer
  * File name: ProceduralMarble.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: ...
+ * File description: Procedural marble material using Perlin noise
  */
 
 #ifndef PROCEDURALMARBLE_HPP_
@@ -21,9 +21,9 @@ public:
 private:
     std::pair<Color, Color> _colors;  ///< Pair of colors (colorA, colorB) for the marble pattern.
     double _scale;                    ///< Scale factor determining the size of each marble cell.
-    double _turbulence;               ///< ...
-    int _octaves;                     ///< ...
-    PerlinNoise _noise;               ///< ...
+    double _turbulence;               ///< Turbulence factor controlling the distortion intensity of the marble veins
+    int _octaves;                     ///< Number of octaves for Perlin noise, controlling fine detail of the pattern
+    PerlinNoise _noise;               ///< Perlin noise generator used to create the procedural marble pattern
 };
 
 #endif /* PROCEDURALMARBLE_HPP_ */
