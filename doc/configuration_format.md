@@ -401,18 +401,22 @@ material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
 | `"phong"` | Diffuse + specular (Phong model); `color` = diffuse color, `specular` = specular color, `shininess` = α |
 | `"textured"` | Samples color from a PPM image file using UV coordinates; no secondary rays |
 | `"chessboard"` | Procedural checkerboard pattern calculated from 3D hit position; no secondary rays |
+| `"marble"` | Procedural marble-like pattern using Perlin noise; `colorA`/`colorB` = vein colors, `scale` = sine frequency, `turbulence` = noise amplitude, `octaves` = detail level; no secondary rays |
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `type` | string | One of `"flat"`, `"reflection"`, `"transparency"`, `"refraction"`, `"phong"`, `"textured"`, `"chessboard"` |
+| `type` | string | One of `"flat"`, `"reflection"`, `"transparency"`, `"refraction"`, `"phong"`, `"textured"`, `"chessboard"`, `"marble"` |
 | `color` | Color | RGB in `[0.0, 1.0]` (diffuse color for phong) |
 | `ior` | double | Index of refraction, > 0 (only for `"refraction"`; common values: air ≈ 1.0, water ≈ 1.33, glass ≈ 1.5) |
 | `specular` | Color | RGB specular highlight color (only for `"phong"`) |
 | `shininess` | double | Shininess exponent > 0 (only for `"phong"`) |
 | `texture` | string | Path to a PPM image file (only for `"textured"`) |
-| `colorA` | Color | First checkerboard color (only for `"chessboard"`) |
-| `colorB` | Color | Second checkerboard color (only for `"chessboard"`) |
-| `scale` | double | Size of checkerboard cells, > 0 (only for `"chessboard"`; default: 1.0) |
+| `colorA` | Color | First color (only for `"chessboard"` and `"marble"`) |
+| `colorB` | Color | Second color (only for `"chessboard"` and `"marble"`) |
+| `scale` | double | Cell size for `"chessboard"` (> 0, default: 1.0); sine frequency for `"marble"` (> 0, default: 1.0) |
+| `turbulence` | double | Amplitude of the Perlin noise perturbation (only for `"marble"`; default: 5.0) |
+| `octaves` | int | Number of fractal noise octaves (only for `"marble"`; default: 6) |
+| `seed` | int | Random seed for the noise permutation table (only for `"marble"`; default: 0) |
 
 ### Textured material
 
@@ -462,6 +466,40 @@ material = {
 | `scale` | double | Cell size in world units; smaller = more tiles (default: 1.0) |
 
 **Note:** Unlike texture-based checkers, this is a true 3D pattern — it wraps around spheres, cylinders, and any primitive naturally.
+
+---
+
+### Procedural marble
+
+The `"marble"` material produces a veined marble-like appearance by composing Perlin noise with a sine wave — no texture file needed.
+
+**How it works:**
+- A fractal Brownian motion (fBm) value is computed at the 3D hit point by summing `octaves` noise layers, each at double the frequency and half the amplitude of the previous
+- The fBm value perturbs a sine wave: `sin(scale × hit.z + turbulence × fractal(hit))`
+- The sine result is remapped from `[-1, 1]` to `[0, 1]` and used to interpolate between `colorA` and `colorB`
+
+```cfg
+material = {
+    type = "marble";
+    colorA = { r = 0.9; g = 0.85; b = 0.8; };
+    colorB = { r = 0.3; g = 0.2; b = 0.15; };
+    scale = 3.0;
+    turbulence = 5.0;
+    octaves = 6;
+    seed = 42;
+};
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `colorA` | Color | Base color of the marble (RGB in `[0.0, 1.0]`) |
+| `colorB` | Color | Vein color (RGB in `[0.0, 1.0]`) |
+| `scale` | double | Spatial frequency of the sine wave; higher = finer veins (> 0, default: 1.0) |
+| `turbulence` | double | Amplitude of the noise perturbation; higher = more chaotic veins (default: 5.0) |
+| `octaves` | int | Number of fractal noise octaves; higher = more surface detail, slower to compute (default: 6) |
+| `seed` | int | Random seed for the permutation table; different values produce different vein patterns (default: 0) |
+
+**Note:** `scale` here controls the frequency of the sine wave along the Z axis, not a cell size as in `"chessboard"`. To orient the veins along a different axis, apply a `rotation` transform to the primitive.
 
 ---
 

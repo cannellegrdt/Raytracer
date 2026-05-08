@@ -24,6 +24,7 @@
 #include "PhongMaterial.hpp"
 #include "TexturedMaterial.hpp"
 #include "ProceduralCheckerboard.hpp"
+#include "ProceduralMarble.hpp"
 #include "LibconfigLoader.hpp"
 #include "PrimitiveBuilder.hpp"
 #include "Decorators.hpp"
@@ -53,10 +54,12 @@ static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
         std::string texturePath = mat["texture"].c_str();
         return std::make_shared<TexturedMaterial>(texturePath);
     }
-    if (type == "chessboard") {
+    if (type == "chessboard" || type == "marble") {
         Color colorA;
         Color colorB;
         double scale = 1.0;
+        double turbulence = 1.0; /* trouver un nombre par défaut */
+        int octaves = 1.0;
         if (mat.exists("colorA")) {
             colorA = {
                 toDouble(mat["colorA"]["r"]),
@@ -73,7 +76,14 @@ static std::shared_ptr<IMaterial> buildMaterial(const libconfig::Setting &mat) {
         }
         if (mat.exists("scale"))
             scale = toDouble(mat["scale"]);
-        return std::make_shared<ProceduralCheckerboard>(colorA, colorB, scale);
+        if (mat.exists("turbulence"))
+            turbulence = toDouble(mat["turbulence"]);
+        if (mat.exists("octaves"))
+            octaves = toDouble(mat["octaves"]);
+        
+        if (type == "chessboard")
+            return std::make_shared<ProceduralCheckerboard>(colorA, colorB, scale);
+        return std::make_shared<ProceduralMarble>(colorA, colorB, scale, turbulence, octaves);
     }
     Color color{
         toDouble(mat["color"]["r"]),
