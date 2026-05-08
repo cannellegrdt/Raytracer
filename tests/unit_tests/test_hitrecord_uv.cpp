@@ -8,8 +8,8 @@
 #include <criterion/criterion.h>
 #include <cmath>
 
-#include "../../include/HitRecord.hpp"
-#include "../../include/Vec3.hpp"
+#include "HitRecord.hpp"
+#include "Vec3.hpp"
 
 static constexpr double EPS = 1e-9;
 

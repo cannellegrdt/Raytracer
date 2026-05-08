@@ -9,12 +9,12 @@
 #include <cmath>
 #include <optional>
 
-#include "../../include/materials/FlatColor.hpp"
-#include "../../include/materials/Reflection.hpp"
-#include "../../include/materials/Transparency.hpp"
-#include "../../include/Vec3.hpp"
-#include "../../include/Ray.hpp"
-#include "../../include/HitRecord.hpp"
+#include "FlatColor.hpp"
+#include "Reflection.hpp"
+#include "Transparency.hpp"
+#include "Vec3.hpp"
+#include "Ray.hpp"
+#include "HitRecord.hpp"
 
 static constexpr double EPS = 1e-9;
 

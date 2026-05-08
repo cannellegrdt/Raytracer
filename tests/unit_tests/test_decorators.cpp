@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <cmath>
 
-#include "../../include/Decorators.hpp"
+#include "Decorators.hpp"
 
 static constexpr double EPS = 1e-9;
 

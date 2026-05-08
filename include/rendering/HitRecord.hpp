@@ -20,8 +20,8 @@ struct HitRecord {
     std::shared_ptr<IMaterial> material;       ///< Shared pointer to the material at the intersection.
     bool frontFace;                            ///< True if ray hit front face of surface.
     std::pair<double, double> UV = {0.0, 0.0}; ///< UV texture coordinates [0, 1].
-    Vec3 tangent;                              ///< Tangent vector for normal mapping.
-    Vec3 bitangent;                            ///< Bitangent vector for normal mapping.
+    Vec3 tangent{};                             ///< Tangent vector for normal mapping.
+    Vec3 bitangent{};                           ///< Bitangent vector for normal mapping.
 };
 
 #endif /* HITRECORD_HPP_ */

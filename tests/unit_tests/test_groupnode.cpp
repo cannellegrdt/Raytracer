@@ -11,8 +11,8 @@
 #include <cmath>
 #include <memory>
 
-#include "../../include/GroupNode.hpp"
-#include "../../include/Mat4.hpp"
+#include "GroupNode.hpp"
+#include "Mat4.hpp"
 
 static constexpr double EPS = 1e-9;
 

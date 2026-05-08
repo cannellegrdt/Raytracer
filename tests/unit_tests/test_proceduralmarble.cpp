@@ -9,11 +9,11 @@
 #include <cmath>
 #include <optional>
 
-#include "../../include/materials/ProceduralMarble.hpp"
-#include "../../include/Vec3.hpp"
-#include "../../include/Ray.hpp"
-#include "../../include/HitRecord.hpp"
-#include "../../include/Color.hpp"
+#include "ProceduralMarble.hpp"
+#include "Vec3.hpp"
+#include "Ray.hpp"
+#include "HitRecord.hpp"
+#include "Color.hpp"
 
 static constexpr double EPS = 1e-9;
 

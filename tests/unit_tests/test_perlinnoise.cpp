@@ -9,8 +9,8 @@
 #include <cmath>
 #include <optional>
 
-#include "../../include/PerlinNoise.hpp"
-#include "../../include/Vec3.hpp"
+#include "PerlinNoise.hpp"
+#include "Vec3.hpp"
 
 static constexpr double EPS = 1e-9;
 

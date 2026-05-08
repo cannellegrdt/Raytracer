@@ -7,7 +7,7 @@
 
 #include <criterion/criterion.h>
 #include <cmath>
-#include "../../include/Mat3.hpp"
+#include "Mat3.hpp"
 
 static constexpr double EPS = 1e-10;
 

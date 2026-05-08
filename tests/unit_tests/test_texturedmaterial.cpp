@@ -11,10 +11,10 @@
 #include <filesystem>
 #include <cmath>
 
-#include "../../include/materials/TexturedMaterial.hpp"
-#include "../../include/Vec3.hpp"
-#include "../../include/Ray.hpp"
-#include "../../include/HitRecord.hpp"
+#include "TexturedMaterial.hpp"
+#include "Vec3.hpp"
+#include "Ray.hpp"
+#include "HitRecord.hpp"
 
 static constexpr double EPS = 1e-9;
 

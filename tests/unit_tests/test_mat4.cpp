@@ -7,7 +7,7 @@
 
 #include <criterion/criterion.h>
 #include <cmath>
-#include "../../include/Mat4.hpp"
+#include "Mat4.hpp"
 
 static constexpr double EPS = 1e-9;
 

@@ -9,10 +9,10 @@
 #include <cmath>
 #include <optional>
 
-#include "../../include/materials/Refraction.hpp"
-#include "../../include/Vec3.hpp"
-#include "../../include/Ray.hpp"
-#include "../../include/HitRecord.hpp"
+#include "Refraction.hpp"
+#include "Vec3.hpp"
+#include "Ray.hpp"
+#include "HitRecord.hpp"
 
 static constexpr double EPS = 1e-9;
 
