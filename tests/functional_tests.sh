@@ -356,10 +356,10 @@ else
 fi
 
 # ── 11. Demo scenes ───────────────────────────────────────────────────────────
-section "Demo scenes (scenes/*.cfg)"
+section "Demo scenes (scenes/**/*.cfg)"
 
 DEMO_FOUND=0
-for scene in scenes/*.cfg; do
+while IFS= read -r scene; do
     [ -f "$scene" ] || continue
     DEMO_FOUND=1
     "$BINARY" "$scene" >/dev/null 2>&1
@@ -369,7 +369,7 @@ for scene in scenes/*.cfg; do
     [ "$ec" -eq 0 ] && [ -f "$ppm_out" ] && is_valid_ppm "$ppm_out" \
         && pass "$name → exit 0, valid PPM" \
         || fail "$name → exit $ec or invalid PPM"
-done
+done < <(find scenes/ -name "*.cfg" -type f | sort)
 
 [ $DEMO_FOUND -eq 0 ] && skip "No demo scenes found in scenes/ — add .cfg files to enable these tests"
 
