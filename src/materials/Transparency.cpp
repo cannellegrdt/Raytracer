@@ -10,5 +10,7 @@
 
 ScatterResult Transparency::scatter(const Ray &ray, const HitRecord &hit) const {
     Vec3 origin = hit.point - RayBias * hit.normal;
-    return ScatterResult{_color, Ray{origin, ray.direction}};
+    Color attenuation = hit.frontFace ? _color : Color{1.0, 1.0, 1.0};
+    
+    return ScatterResult{attenuation, Ray{origin, ray.direction}};
 }

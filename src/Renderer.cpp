@@ -74,6 +74,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
     }
 
     if (aaType == "adaptive" && samples > 1) {
+        std::vector<bool> needRefine(width * height, false);
         for (int y=0; y<height; y++) {
             for (int x=0; x<width; x++) {
                 const Color &currentColor = pixelBuffer[y * width + x];
@@ -96,18 +97,25 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
                     maxDiff = std::max(maxDiff, diffColor(currentColor, down));
                 }
 
-                if (maxDiff > threshold) {
-                    Color refinedColor{0, 0, 0};
-                    for (int j=0; j<samples; j++) {
-                        for (int i=0; i<samples; i++) {
-                            double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
-                            double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
-                            Ray ray = cam.generateRay(u, v);
-                            refinedColor = refinedColor + traceRay(ray, context.scene, MAX_DEPTH);
-                        }
+                needRefine[y * width + x] = (maxDiff > threshold);
+            }
+        }
+
+        for (int y=0; y<height; y++) {
+            for (int x=0; x<width; x++) {
+                if (!needRefine[y * width + x])
+                    continue;
+
+                Color refinedColor{0, 0, 0};
+                for (int j=0; j<samples; j++) {
+                    for (int i=0; i<samples; i++) {
+                        double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
+                        double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
+                        Ray ray = cam.generateRay(u, v);
+                        refinedColor = refinedColor + traceRay(ray, context.scene, MAX_DEPTH);
                     }
-                    pixelBuffer[y * width + x] = refinedColor * (1.0 / (samples * samples));
                 }
+                pixelBuffer[y * width + x] = refinedColor * (1.0 / (samples * samples));
             }
         }
     } else if (samples > 1) {
