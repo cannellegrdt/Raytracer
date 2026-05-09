@@ -273,12 +273,7 @@ private:
         if (v < 0.0 || u + v > 1.0)
             return std::nullopt;
 
-        Vec3 N = normalize(face.faceNormal);
-        double d = -dot(N, face.v0);
-        double denom = dot(N, ray.direction);
-        if (std::fabs(denom) < epsilon)
-            return std::nullopt;
-        double t = - (dot(N, ray.origin) + d) / denom;
+        double t = dot(face.edge2, qvec) * invDet;
         if (t < epsilon)
             return std::nullopt;
 
