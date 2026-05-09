@@ -72,6 +72,14 @@ Test(sphere, ray_pointing_away_from_sphere_no_hit) {
     cr_assert_not(hit.has_value());
 }
 
+Test(sphere, ray_behind_sphere_pointing_away_no_hit) {
+    Sphere s;
+    s.configure(sphereParams(0, 0, 0, 1.0), nullptr);
+    Ray ray{{0, 0, -2}, {0, 0, -1}};
+    auto hit = s.intersect(ray);
+    cr_assert_not(hit.has_value());
+}
+
 Test(sphere, front_face_true_when_hitting_outside) {
     Sphere s;
     s.configure(sphereParams(0, 0, -5, 1.0), nullptr);

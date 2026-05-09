@@ -80,3 +80,37 @@ Test(scene, lights_contains_added_light) {
     s.addLight(std::move(l));
     cr_assert_eq(s.lights()[0].get(), raw);
 }
+
+Test(scene, move_constructor_transfers_primitives_and_lights) {
+    Scene s1;
+    s1.addPrimitive(makeMockPrimitive());
+    s1.addLight(std::make_unique<MockLight>());
+    Scene s2 = std::move(s1);
+    cr_assert_eq(s2.primitives().size(), 1u);
+    cr_assert_eq(s2.lights().size(), 1u);
+    cr_assert(s1.primitives().empty());
+    cr_assert(s1.lights().empty());
+}
+
+Test(scene, move_assignment_transfers_primitives_and_lights) {
+    Scene s1;
+    s1.addPrimitive(makeMockPrimitive());
+    s1.addLight(std::make_unique<MockLight>());
+    Scene s2;
+    s2 = std::move(s1);
+    cr_assert_eq(s2.primitives().size(), 1u);
+    cr_assert_eq(s2.lights().size(), 1u);
+    cr_assert(s1.primitives().empty());
+    cr_assert(s1.lights().empty());
+}
+
+Test(scene, primitive_bounding_box_defaults_to_infinite) {
+    auto p = makeMockPrimitive();
+    AABB box = p->boundingBox();
+    cr_assert(box.isInfinite());
+}
+
+Test(scene, primitive_setFilePath_default_does_nothing) {
+    auto p = makeMockPrimitive();
+    cr_assert_no_throw(p->setFilePath("dummy"));
+}

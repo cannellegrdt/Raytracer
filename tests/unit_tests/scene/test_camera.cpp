@@ -108,3 +108,35 @@ Test(camera, getHeight_returns_constructed_height) {
     Camera cam(Vec3(0, 0, 0), Vec3(0, 0, 0), 90.0, 800, 600);
     cr_assert_eq(cam.getHeight(), 600);
 }
+
+Test(camera, negative_width_throws) {
+    cr_assert_throw(Camera(Vec3(0, 0, 0), Vec3(0, 0, 0), 90.0, -1, 600), std::invalid_argument);
+}
+
+Test(camera, zero_width_throws) {
+    cr_assert_throw(Camera(Vec3(0, 0, 0), Vec3(0, 0, 0), 90.0, 0, 600), std::invalid_argument);
+}
+
+Test(camera, negative_height_throws) {
+    cr_assert_throw(Camera(Vec3(0, 0, 0), Vec3(0, 0, 0), 90.0, 800, -1), std::invalid_argument);
+}
+
+Test(camera, zero_height_throws) {
+    cr_assert_throw(Camera(Vec3(0, 0, 0), Vec3(0, 0, 0), 90.0, 800, 0), std::invalid_argument);
+}
+
+Test(camera, zero_fov_throws) {
+    cr_assert_throw(Camera(Vec3(0, 0, 0), Vec3(0, 0, 0), 0.0, 800, 600), std::invalid_argument);
+}
+
+Test(camera, negative_fov_throws) {
+    cr_assert_throw(Camera(Vec3(0, 0, 0), Vec3(0, 0, 0), -10.0, 800, 600), std::invalid_argument);
+}
+
+Test(camera, fov_180_throws) {
+    cr_assert_throw(Camera(Vec3(0, 0, 0), Vec3(0, 0, 0), 180.0, 800, 600), std::invalid_argument);
+}
+
+Test(camera, fov_over_180_throws) {
+    cr_assert_throw(Camera(Vec3(0, 0, 0), Vec3(0, 0, 0), 200.0, 800, 600), std::invalid_argument);
+}

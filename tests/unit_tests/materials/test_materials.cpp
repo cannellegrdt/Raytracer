@@ -188,3 +188,33 @@ Test(transparency, ray_passes_through_regardless_of_normal) {
     cr_assert(result.scatteredRay.has_value());
     cr_assert(vec3_near(result.scatteredRay->direction, ray.direction));
 }
+
+Test(flatcolor, getSpecular_returns_nullopt) {
+    FlatColor mat(Color{1, 1, 1});
+    cr_assert_not(mat.getSpecular().has_value());
+}
+
+Test(flatcolor, isTransmissive_returns_false) {
+    FlatColor mat(Color{1, 1, 1});
+    cr_assert_not(mat.isTransmissive());
+}
+
+Test(reflection, getSpecular_returns_nullopt) {
+    Reflection mat(Color{1, 1, 1});
+    cr_assert_not(mat.getSpecular().has_value());
+}
+
+Test(reflection, isTransmissive_returns_false) {
+    Reflection mat(Color{1, 1, 1});
+    cr_assert_not(mat.isTransmissive());
+}
+
+Test(transparency, getSpecular_returns_nullopt) {
+    Transparency mat(Color{1, 1, 1});
+    cr_assert_not(mat.getSpecular().has_value());
+}
+
+Test(transparency, isTransmissive_returns_true) {
+    Transparency mat(Color{1, 1, 1});
+    cr_assert(mat.isTransmissive());
+}

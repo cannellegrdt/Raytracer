@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "GroupNode.hpp"
+#include "IPrimitive.hpp"
 #include "Mat4.hpp"
 
 static constexpr double EPS = 1e-9;
@@ -22,15 +23,18 @@ static bool vec3_near(const Vec3 &a, const Vec3 &b) {
     return near(a.x, b.x) && near(a.y, b.y) && near(a.z, b.z);
 }
 
-struct StubPrimitive : IPrimitive {
+class StubPrimitive : public IPrimitive {
+public:
     std::optional<HitRecord> result = std::nullopt;
     mutable Ray lastRay{{0,0,0},{0,0,0}};
+    bool returnInfinite = false;
 
     void configure(const std::unordered_map<std::string, double> &, std::shared_ptr<IMaterial>) override {}
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         lastRay = ray;
         return result;
     }
+    AABB boundingBox() const override { return returnInfinite ? AABB::infinite() : AABB(Vec3(0,0,0), Vec3(1,1,1)); }
 };
 
 static PrimitivePtr makeStub(StubPrimitive *&outPtr) {
@@ -236,4 +240,15 @@ Test(groupnode, normal_is_transformed_correctly) {
     auto hit = node.intersect(ray);
     cr_assert(hit.has_value());
     cr_assert(near(length(hit->normal), 1.0));
+}
+
+Test(groupnode, boundingBox_with_infinite_child_returns_infinite) {
+    StubPrimitive *stub;
+    std::vector<PrimitivePtr> children;
+    children.push_back(makeStub(stub));
+    stub->returnInfinite = true;
+
+    GroupNode node(std::move(children));
+    AABB box = node.boundingBox();
+    cr_assert(box.isInfinite());
 }
