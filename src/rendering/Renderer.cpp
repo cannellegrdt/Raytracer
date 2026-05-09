@@ -12,6 +12,7 @@
 #include <cmath>
 #include <vector>
 #include <cstdint>
+#include <algorithm>
 #include <omp.h>
 #include "Renderer.hpp"
 #include "IMaterial.hpp"
@@ -20,6 +21,7 @@
 #include "BVH.hpp"
 
 constexpr int MAX_DEPTH = 10;
+constexpr int TILE_SIZE = 16;
 
 thread_local std::mt19937 gen(std::random_device{}());
 thread_local std::uniform_real_distribution<double> dist(0.0, 1.0);
@@ -75,11 +77,21 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
     context.scene.bvh();
 
     if (samples == 1 || aaType == "adaptive") {
-#pragma omp parallel for schedule(dynamic, 4)
-        for (int y=0; y<height; y++) {
-            for (int x=0; x<width; x++) {
-                Ray ray = cam.generateRay(static_cast<double>(x), static_cast<double>(y));
-                pixelBuffer[y * width + x] = traceRay(ray, context.scene, MAX_DEPTH);
+        int tileHeight = (height + TILE_SIZE - 1) / TILE_SIZE;
+        int tileWidth = (width + TILE_SIZE - 1) / TILE_SIZE;
+#pragma omp parallel for schedule(dynamic, 1)
+        for (int ty=0; ty<tileHeight; ty++) {
+            for (int tx=0; tx<tileWidth; tx++) {
+                int yStart = ty * TILE_SIZE;
+                int xStart = tx * TILE_SIZE;
+                int yEnd = std::min(yStart + TILE_SIZE, height);
+                int xEnd = std::min(xStart + TILE_SIZE, width);
+                for (int y=yStart; y<yEnd; y++) {
+                    for (int x=xStart; x<xEnd; x++) {
+                        Ray ray = cam.generateRay(static_cast<double>(x), static_cast<double>(y));
+                        pixelBuffer[y * width + x] = traceRay(ray, context.scene, MAX_DEPTH);
+                    }
+                }
             }
         }
     }
@@ -113,38 +125,58 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
             }
         }
 
-#pragma omp parallel for schedule(dynamic, 4)
-        for (int y=0; y<height; y++) {
-            for (int x=0; x<width; x++) {
-                if (!needRefine[y * width + x])
-                    continue;
+        int tileHeight = (height + TILE_SIZE - 1) / TILE_SIZE;
+        int tileWidth = (width + TILE_SIZE - 1) / TILE_SIZE;
+#pragma omp parallel for schedule(dynamic, 1)
+        for (int ty=0; ty<tileHeight; ty++) {
+            for (int tx=0; tx<tileWidth; tx++) {
+                int yStart = ty * TILE_SIZE;
+                int xStart = tx * TILE_SIZE;
+                int yEnd = std::min(yStart + TILE_SIZE, height);
+                int xEnd = std::min(xStart + TILE_SIZE, width);
+                for (int y=yStart; y<yEnd; y++) {
+                    for (int x=xStart; x<xEnd; x++) {
+                        if (!needRefine[y * width + x])
+                            continue;
 
-                Color refinedColor{0, 0, 0};
-                for (int j=0; j<samples; j++) {
-                    for (int i=0; i<samples; i++) {
-                        double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
-                        double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
-                        Ray ray = cam.generateRay(u, v);
-                        refinedColor = refinedColor + traceRay(ray, context.scene, MAX_DEPTH);
+                        Color refinedColor{0, 0, 0};
+                        for (int j=0; j<samples; j++) {
+                            for (int i=0; i<samples; i++) {
+                                double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
+                                double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
+                                Ray ray = cam.generateRay(u, v);
+                                refinedColor = refinedColor + traceRay(ray, context.scene, MAX_DEPTH);
+                            }
+                        }
+                        pixelBuffer[y * width + x] = refinedColor * (1.0 / (samples * samples));
                     }
                 }
-                pixelBuffer[y * width + x] = refinedColor * (1.0 / (samples * samples));
             }
         }
     } else if (samples > 1) {
-#pragma omp parallel for schedule(dynamic, 4)
-        for (int y=0; y<height; y++) {
-            for (int x=0; x<width; x++) {
-                Color pixelColor{0, 0, 0};
-                for (int j=0; j<samples; j++) {
-                    for (int i=0; i<samples; i++) {
-                        double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
-                        double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
-                        Ray ray = cam.generateRay(u, v);
-                        pixelColor = pixelColor + traceRay(ray, context.scene, MAX_DEPTH);
+        int tileHeight = (height + TILE_SIZE - 1) / TILE_SIZE;
+        int tileWidth = (width + TILE_SIZE - 1) / TILE_SIZE;
+#pragma omp parallel for schedule(dynamic, 1)
+        for (int ty=0; ty<tileHeight; ty++) {
+            for (int tx=0; tx<tileWidth; tx++) {
+                int yStart = ty * TILE_SIZE;
+                int xStart = tx * TILE_SIZE;
+                int yEnd = std::min(yStart + TILE_SIZE, height);
+                int xEnd = std::min(xStart + TILE_SIZE, width);
+                for (int y=yStart; y<yEnd; y++) {
+                    for (int x=xStart; x<xEnd; x++) {
+                        Color pixelColor{0, 0, 0};
+                        for (int j=0; j<samples; j++) {
+                            for (int i=0; i<samples; i++) {
+                                double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
+                                double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
+                                Ray ray = cam.generateRay(u, v);
+                                pixelColor = pixelColor + traceRay(ray, context.scene, MAX_DEPTH);
+                            }
+                        }
+                        pixelBuffer[y * width + x] = pixelColor * (1.0 / (samples * samples));
                     }
                 }
-                pixelBuffer[y * width + x] = pixelColor * (1.0 / (samples * samples));
             }
         }
     }
