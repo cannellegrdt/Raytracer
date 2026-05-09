@@ -72,11 +72,13 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
 
     context.scene.bvh();
 
+    if (samples == 1 || aaType == "adaptive") {
 #pragma omp parallel for schedule(dynamic, 4)
-    for (int y=0; y<height; y++) {
-        for (int x=0; x<width; x++) {
-            Ray ray = cam.generateRay(static_cast<double>(x), static_cast<double>(y));
-            pixelBuffer[y * width + x] = traceRay(ray, context.scene, MAX_DEPTH);
+        for (int y=0; y<height; y++) {
+            for (int x=0; x<width; x++) {
+                Ray ray = cam.generateRay(static_cast<double>(x), static_cast<double>(y));
+                pixelBuffer[y * width + x] = traceRay(ray, context.scene, MAX_DEPTH);
+            }
         }
     }
 
