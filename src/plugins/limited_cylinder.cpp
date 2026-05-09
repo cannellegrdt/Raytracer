@@ -39,6 +39,20 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Returns the axis-aligned bounding box enclosing the finite cylinder.
+    AABB boundingBox() const override {
+        Vec3 top = _center + _height * _axis;
+        Vec3 r(_radius, _radius, _radius);
+        return AABB(
+            Vec3(std::min(_center.x, top.x) - _radius,
+                 std::min(_center.y, top.y) - _radius,
+                 std::min(_center.z, top.z) - _radius),
+            Vec3(std::max(_center.x, top.x) + _radius,
+                 std::max(_center.y, top.y) + _radius,
+                 std::max(_center.z, top.z) + _radius)
+        );
+    }
+
     /// @brief Computes the nearest ray-cylinder intersection (body and both caps).
     /// @param ray The ray to test for intersection.
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.

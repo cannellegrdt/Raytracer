@@ -34,6 +34,13 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Returns the axis-aligned bounding box enclosing the tanglecube.
+    AABB boundingBox() const override {
+        double r = _bound * _scale;
+        Vec3 rv(r, r, r);
+        return AABB(_center - rv, _center + rv);
+    }
+
     /// @brief Computes the nearest ray-tanglecube intersection via bounded ray marching and bisection.
     /// @param ray The ray to test for intersection.
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.

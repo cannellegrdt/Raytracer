@@ -14,6 +14,7 @@
     #include <string>
     #include "HitRecord.hpp"
     #include "Ray.hpp"
+    #include "AABB.hpp"
 
 class IMaterial;
 
@@ -30,6 +31,11 @@ public:
     /// @param params Map of parameter names to values.
     /// @param mat Shared pointer to material to apply.
     virtual void configure(const std::unordered_map<std::string, double> &params, std::shared_ptr<IMaterial> mat) = 0;
+
+    /// @brief Returns an axis-aligned bounding box enclosing the primitive.
+    /// @return AABB::infinite() by default for unbounded primitives.
+    virtual AABB boundingBox() const { return AABB::infinite(); }
+
     virtual ~IPrimitive() = default;
 };
 

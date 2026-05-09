@@ -43,6 +43,13 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Returns the axis-aligned bounding box enclosing the torus.
+    AABB boundingBox() const override {
+        double r = _majorRadius + _minorRadius;
+        Vec3 rv(r, r, r);
+        return AABB(_center - rv, _center + rv);
+    }
+
     /// @brief Computes the nearest ray-torus intersection.
     /// @param ray The ray to test for intersection.
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.

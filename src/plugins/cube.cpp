@@ -34,6 +34,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Returns the axis-aligned bounding box defined by the cube's min and max points.
+    AABB boundingBox() const override { return AABB(_min, _max); }
+
     /// @brief Computes the nearest ray-cube intersection using slab method.
     /// @param ray The ray to test for intersection.
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.

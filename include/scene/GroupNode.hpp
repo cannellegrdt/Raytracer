@@ -37,6 +37,9 @@ public:
     void configure(const std::unordered_map<std::string, double> &params,
         std::shared_ptr<IMaterial> mat) override;
 
+    /// @brief Returns the axis-aligned bounding box enclosing all child primitives, transformed by the group's transform.
+    AABB boundingBox() const override;
+
 private:
     std::vector<PrimitivePtr> _children;
     Mat4 _transform{identity4()};

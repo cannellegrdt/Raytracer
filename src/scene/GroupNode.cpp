@@ -9,6 +9,8 @@
 #include "Mat3.hpp"
 #include <limits>
 
+constexpr int NB_CORNERS_AABB = 8;
+
 GroupNode::GroupNode(std::vector<PrimitivePtr> children)
     : _children(std::move(children)) {}
 
@@ -29,6 +31,30 @@ void GroupNode::setTransform(const Mat4 &localTransform) {
 }
 
 void GroupNode::configure(const std::unordered_map<std::string, double> &, std::shared_ptr<IMaterial>) {}
+
+AABB GroupNode::boundingBox() const {
+    AABB localBounds = AABB::empty();
+    for (const auto &child : _children)
+        localBounds = AABB::merge(localBounds, child->boundingBox());
+
+    if (!_hasTransform || localBounds.isInfinite())
+        return localBounds;
+
+    const Vec3 mn = localBounds.min, mx = localBounds.max;
+    const Vec3 corners[NB_CORNERS_AABB] = {
+        {mn.x, mn.y, mn.z}, {mx.x, mn.y, mn.z},
+        {mn.x, mx.y, mn.z}, {mx.x, mx.y, mn.z},
+        {mn.x, mn.y, mx.z}, {mx.x, mn.y, mx.z},
+        {mn.x, mx.y, mx.z}, {mx.x, mx.y, mx.z}
+    };
+
+    AABB worldBounds = AABB::empty();
+    for (const Vec3 &c : corners) {
+        Vec3 wc = transformPoint(_transform, c);
+        worldBounds = AABB::merge(worldBounds, AABB(wc, wc));
+    }
+    return worldBounds;
+}
 
 std::optional<HitRecord> GroupNode::intersect(const Ray &ray) const {
     Ray localRay = _hasTransform

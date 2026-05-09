@@ -14,6 +14,7 @@
 #include "IMaterial.hpp"
 #include "ScatterResult.hpp"
 #include "Common.hpp"
+#include "BVH.hpp"
 
 constexpr int MAX_DEPTH = 10;
 
@@ -36,6 +37,9 @@ static Vec3 randomInHemisphere(const Vec3 &normal) {
 }
 
 std::optional<HitRecord> Renderer::closestHit(const Ray &ray, const Scene &scene) {
+    if (const BVH *bvh = scene.bvh())
+        return bvh->intersect(ray, scene.primitives());
+
     std::optional<HitRecord> closest;
     double tMax = std::numeric_limits<double>::infinity();
 

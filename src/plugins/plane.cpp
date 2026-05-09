@@ -32,6 +32,9 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Returns an infinite bounding box for the infinite plane.
+    AABB boundingBox() const override { return AABB::infinite(); }
+
     /// @brief Computes the ray-plane intersection.
     /// @param ray The ray to test for intersection.
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.

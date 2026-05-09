@@ -35,6 +35,19 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Returns the axis-aligned bounding box enclosing the triangle with small padding.
+    AABB boundingBox() const override {
+        constexpr double pad = 1e-4;
+        return AABB(
+            Vec3(std::min({_v0.x, _v1.x, _v2.x}) - pad,
+                 std::min({_v0.y, _v1.y, _v2.y}) - pad,
+                 std::min({_v0.z, _v1.z, _v2.z}) - pad),
+            Vec3(std::max({_v0.x, _v1.x, _v2.x}) + pad,
+                 std::max({_v0.y, _v1.y, _v2.y}) + pad,
+                 std::max({_v0.z, _v1.z, _v2.z}) + pad)
+        );
+    }
+
     /// @brief Computes the nearest ray-triangle intersection using Möller-Trumbore algorithm.
     /// @param ray The ray to test for intersection.
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.

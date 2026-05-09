@@ -39,6 +39,20 @@ public:
         _material = std::move(mat);
     }
 
+    /// @brief Returns the axis-aligned bounding box enclosing the finite cone from apex to base.
+    AABB boundingBox() const override {
+        Vec3 baseCenter = _apex + _height * _axis;
+        double baseRadius = _height * std::tan(_angle);
+        return AABB(
+            Vec3(std::min(_apex.x, baseCenter.x - baseRadius),
+                 std::min(_apex.y, baseCenter.y - baseRadius),
+                 std::min(_apex.z, baseCenter.z - baseRadius)),
+            Vec3(std::max(_apex.x, baseCenter.x + baseRadius),
+                 std::max(_apex.y, baseCenter.y + baseRadius),
+                 std::max(_apex.z, baseCenter.z + baseRadius))
+        );
+    }
+
     /// @brief Computes the nearest ray-cone intersection (body and cap).
     /// @param ray The ray to test for intersection.
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
