@@ -183,6 +183,7 @@ static const std::unordered_map<std::string, std::string> kMapTablePrim = {
     {"tanglecubes", "tanglecube"},
     {"triangles", "triangle"},
     {"mandelbulbs", "mandelbulb"},
+    {"mobius", "mobius"},
 };
 
 static const std::unordered_map<std::string, std::vector<std::string>> kPrimFields = {
@@ -197,6 +198,7 @@ static const std::unordered_map<std::string, std::vector<std::string>> kPrimFiel
     {"tanglecube", {"x", "y", "z", "s"}},
     {"triangle", {"v0x", "v0y", "v0z", "v1x", "v1y", "v1z", "v2x", "v2y", "v2z"}},
     {"mandelbulb", {"x", "y", "z", "s", "power", "iters", "bailout"}},
+    {"mobius", {"x", "y", "z", "R", "w"}},
 };
 
 static std::vector<PrimitivePtr> parsePrimitivesBlock(

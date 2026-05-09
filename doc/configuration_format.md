@@ -21,6 +21,8 @@ Files are parsed by **libconfig++** and loaded by `LibconfigLoader`.
     3.9. [Tanglecube](#tanglecube)
     3.10. [Triangle](#triangle)
     3.11. [OBJ Mesh](#obj-mesh)
+    3.12. [Mandelbulb (fractals)](#mandelbulb)
+    3.13. [Mobius strip](#mobius-strip)
 4. [Transforms on primitives](#4-transforms-on-primitives)
 5. [Groups (scene graph)](#5-groups-scene-graph)
 6. [Materials](#6-materials)
@@ -96,6 +98,7 @@ primitives = {
     torus = ( ... );
     cubes = ( ... );
     tanglecubes = ( ... );
+    mobius = ( ... );
     obj_meshes = ( ... );
     mandelbulbs = ( ... );
 };
@@ -342,43 +345,6 @@ triangles = (
 
 ---
 
-### Mandelbulb
-
-```cfg
-mandelbulbs = (
-    {
-        x = 0.0; y = 0.0; z = 0.0;
-        s = 1.0;
-        power = 8.0;
-        iters = 20;
-        bailout = 2.0;
-        material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
-    }
-);
-```
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `x`, `y`, `z` | double | Center of the Mandelbulb |
-| `s` | double | Scale (> 0); controls the overall size |
-| `power` | double | Power of the fractal (e.g., 8.0 for classic Mandelbulb) (> 0) |
-| `iters` | int | Maximum iterations for the fractal computation (> 0) |
-| `bailout` | double | Bailout value for divergence detection (> 0) |
-| `material` | Material | Surface material |
-
-**Notes:**
-- The Mandelbulb is a 3D fractal (generalization of the Mandelbrot set), rendered using ray marching with a distance estimator.
-- The surface is defined implicitly by iterating `z = z^power + c` in spherical coordinates until divergence.
-- Ray marching steps along the ray, evaluating the distance to the surface at each point.
-- The bounding box is centered at `(x,y,z)` with radius `s * bailout`.
-- UV coordinates are generated: `u` from longitude (atan2), `v` from latitude (acos).
-- Tangent and bitangent vectors are computed from the normal for normal mapping support.
-- Higher `power` values create more complex, spiky shapes; `power = 2` approximates a sphere.
-- Tune `iters` for detail vs performance; `bailout` typically 2.0.
-- The fractal is bounded, so no infinite marching.
-
----
-
 ### OBJ Mesh
 
 OBJ meshes are loaded from external `.obj` wavefront files at render time. They are parsed into triangles internally and organized into a BVH for fast intersection.
@@ -425,6 +391,75 @@ All transforms are applied in the standard order: **Scale → Shear → Rotation
 - Face normals are auto-computed from the cross product of edges if vertex normals are absent
 - The mesh is wrapped in a BVH (median-split) for O(log n) ray traversal
 - The `file` path is relative to the working directory where the raytracer is executed
+
+---
+
+### Mandelbulb
+
+```cfg
+mandelbulbs = (
+    {
+        x = 0.0; y = 0.0; z = 0.0;
+        s = 1.0;
+        power = 8.0;
+        iters = 20;
+        bailout = 2.0;
+        material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
+    }
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `x`, `y`, `z` | double | Center of the Mandelbulb |
+| `s` | double | Scale (> 0); controls the overall size |
+| `power` | double | Power of the fractal (e.g., 8.0 for classic Mandelbulb) (> 0) |
+| `iters` | int | Maximum iterations for the fractal computation (> 0) |
+| `bailout` | double | Bailout value for divergence detection (> 0) |
+| `material` | Material | Surface material |
+
+**Notes:**
+- The Mandelbulb is a 3D fractal (generalization of the Mandelbrot set), rendered using ray marching with a distance estimator.
+- The surface is defined implicitly by iterating `z = z^power + c` in spherical coordinates until divergence.
+- Ray marching steps along the ray, evaluating the distance to the surface at each point.
+- The bounding box is centered at `(x,y,z)` with radius `s * bailout`.
+- UV coordinates are generated: `u` from longitude (atan2), `v` from latitude (acos).
+- Tangent and bitangent vectors are computed from the normal for normal mapping support.
+- Higher `power` values create more complex, spiky shapes; `power = 2` approximates a sphere.
+- Tune `iters` for detail vs performance; `bailout` typically 2.0.
+- The fractal is bounded, so no infinite marching.
+
+---
+
+### Mobius Strip
+
+```cfg
+mobius = (
+    {
+        x = 0.0; y = 0.0; z = 0.0;
+        R = 2.0; w = 0.2;
+        material = { type = "flat"; color = { r = 0.8; g = 0.4; b = 0.2; }; };
+    }
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `x`, `y`, `z` | double | Center of the Mobius strip |
+| `R` | double | Major radius - distance from center to the center of the strip (> 0) |
+| `w` | double | Half-width of the strip (> 0) |
+| `material` | Material | Surface material |
+
+**Notes:**
+- The Mobius strip is a non-orientable surface with one continuous side
+- The parametric equation is:
+  - `x = (R + v * cos(u/2)) * cos(u)`
+  - `y = (R + v * cos(u/2)) * sin(u)`
+  - `z = v * sin(u/2)`
+  - where `u ∈ [0, 2π]` (angle around the strip) and `v ∈ [-w, w]` (width direction)
+- Ray intersection uses Newton-Raphson method with multiple starting points for robustness
+- UV coordinates are generated: `u = u / (2π)`, `v = (v + w) / (2w)`
+- Tangent and bitangent vectors are provided for normal mapping support
 
 ---
 
