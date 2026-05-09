@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <stack>
 #include <omp.h>
 #include "BVH.hpp"
 #include "IPrimitive.hpp"
@@ -200,26 +201,35 @@ std::optional<HitRecord> BVH::intersect(const Ray &ray, const std::vector<Primit
 
 std::optional<HitRecord> BVH::traverseNode(int nodeIdx, const Ray &ray, double tMin, double &tMax,
     const std::vector<PrimitivePtr> &prims) const {
-    const Node &node = _nodes[nodeIdx];
+    std::optional<HitRecord> closest;
+    double current_tMax = tMax;
+    std::stack<int> nodeStack;
+    nodeStack.push(nodeIdx);
 
-    double localMin = tMin;
-    double localMax = tMax;
-    if (!node.box.intersect(ray, localMin, localMax))
-        return std::nullopt;
+    while (!nodeStack.empty()) {
+        int currentNodeIdx = nodeStack.top();
+        nodeStack.pop();
+        const Node &node = _nodes[currentNodeIdx];
 
-    if (node.left == -1) {
-        std::optional<HitRecord> closest;
-        for (int i = node.primBegin; i < node.primEnd; i++) {
-            auto hit = prims[_primIndices[i]]->intersect(ray);
-            if (hit && hit->t > tMin && hit->t < tMax) {
-                tMax = hit->t;
-                closest = hit;
+        double localMin = tMin;
+        double localMax = current_tMax;
+        if (!node.box.intersect(ray, localMin, localMax))
+            continue;
+
+        if (node.left == -1) {
+            for (int i = node.primBegin; i < node.primEnd; i++) {
+                auto hit = prims[_primIndices[i]]->intersect(ray);
+                if (hit && hit->t > tMin && hit->t < current_tMax) {
+                    current_tMax = hit->t;
+                    closest = hit;
+                }
             }
+        } else {
+            nodeStack.push(node.right);
+            nodeStack.push(node.left);
         }
-        return closest;
     }
 
-    auto leftHit = traverseNode(node.left,  ray, tMin, tMax, prims);
-    auto rightHit = traverseNode(node.right, ray, tMin, tMax, prims);
-    return rightHit ? rightHit : leftHit;
+    tMax = current_tMax;
+    return closest;
 }

@@ -3,7 +3,7 @@
  * File name: obj.cpp
  * Author: Cannelle Gourdet - lankley
  * File description: OBJ mesh primitive plugin. Parses .obj files and builds an internal
- *                   BVH (median split) over the resulting triangles for O(log n) intersection.
+ *                   BVH (SAH binned) over the resulting triangles for O(log n) intersection.
  */
 
 #include <algorithm>
@@ -21,6 +21,15 @@
 #include "Vec3.hpp"
 
 namespace {
+
+static constexpr int NUM_BINS = 12;
+static constexpr int MAX_LEAF_SIZE = 4;
+
+static double surfaceArea(const AABB &box) {
+    Vec3 d = box.max - box.min;
+    if (d.x < 0.0 || d.y < 0.0 || d.z < 0.0) return 0.0;
+    return 2.0 * (d.x * d.y + d.y * d.z + d.z * d.x);
+}
 
 struct MeshFace {
     Vec3 v0, v1, v2;
@@ -193,39 +202,125 @@ private:
         _nodes[nodeIdx].faceBegin = begin;
         _nodes[nodeIdx].faceEnd = end;
 
-        if (end - begin <= 4)
+        if (end - begin <= MAX_LEAF_SIZE)
             return nodeIdx;
-        
-        Vec3 cMin = _faces[_faceIdx[begin]].bbox.centroid();
-        Vec3 cMax = cMin;
-        for (int i=begin+1; i<end; i++) {
-            Vec3 c = _faces[_faceIdx[i]].bbox.centroid();
-            cMin.x = std::min(cMin.x, c.x);
-            cMax.x = std::max(cMax.x, c.x);
-            cMin.y = std::min(cMin.y, c.y);
-            cMax.y = std::max(cMax.y, c.y);
-            cMin.z = std::min(cMin.z, c.z);
-            cMax.z = std::max(cMax.z, c.z);
-        }
-        Vec3 ext = cMax - cMin;
-        int axis = 0;
-        if (ext.y > ext.x)
-            axis = 1;
-        if (ext.z > (axis == 0 ? ext.x : ext.y))
-            axis = 2;
 
-        int mid = (begin + end) / 2;
-        std::nth_element(
-            _faceIdx.begin() + begin,
-            _faceIdx.begin() + mid,
-            _faceIdx.begin() + end,
-            [this, axis](int a, int b) {
-                return _faces[a].bbox.centroid()[axis] < _faces[b].bbox.centroid()[axis];
+        struct Bin {
+            AABB box = AABB::empty();
+            int count = 0;
+        };
+
+        const double parentSA = surfaceArea(box);
+        double bestCost = static_cast<double>(end - begin);
+        int bestAxis = -1;
+        int bestBin = -1;
+        double bestCMin = 0.0, bestCMax = 0.0;
+
+        if (parentSA > 0.0) {
+            for (int axis = 0; axis < 3; axis++) {
+                double cMin = std::numeric_limits<double>::infinity();
+                double cMax = -std::numeric_limits<double>::infinity();
+                for (int i = begin; i < end; i++) {
+                    Vec3 c = _faces[_faceIdx[i]].bbox.centroid();
+                    double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
+                    if (coord < cMin)
+                        cMin = coord;
+                    if (coord > cMax)
+                        cMax = coord;
+                }
+                if (cMax <= cMin) continue;
+
+                Bin bins[NUM_BINS];
+                double invRange = static_cast<double>(NUM_BINS) / (cMax - cMin);
+                for (int i = begin; i < end; i++) {
+                    Vec3 c = _faces[_faceIdx[i]].bbox.centroid();
+                    double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
+                    int b = static_cast<int>((coord - cMin) * invRange);
+                    if (b >= NUM_BINS)
+                        b = NUM_BINS - 1;
+                    bins[b].box = AABB::merge(bins[b].box, _faces[_faceIdx[i]].bbox);
+                    bins[b].count++;
+                }
+
+                AABB leftBox[NUM_BINS - 1];
+                int leftCnt[NUM_BINS - 1];
+                {
+                    AABB lb = AABB::empty(); int lc = 0;
+                    for (int b = 0; b < NUM_BINS - 1; b++) {
+                        lb = AABB::merge(lb, bins[b].box);
+                        lc += bins[b].count;
+                        leftBox[b] = lb;
+                        leftCnt[b] = lc;
+                    }
+                }
+
+                AABB rightBox[NUM_BINS - 1];
+                int rightCnt[NUM_BINS - 1];
+                {
+                    AABB rb = AABB::empty(); int rc = 0;
+                    for (int b = NUM_BINS - 1; b >= 1; b--) {
+                        rb = AABB::merge(rb, bins[b].box);
+                        rc += bins[b].count;
+                        rightBox[b - 1] = rb;
+                        rightCnt[b - 1] = rc;
+                    }
+                }
+
+                for (int b = 0; b < NUM_BINS - 1; b++) {
+                    if (leftCnt[b] == 0 || rightCnt[b] == 0) continue;
+                    double cost = (surfaceArea(leftBox[b]) * leftCnt[b] + surfaceArea(rightBox[b]) * rightCnt[b]) / parentSA;
+                    if (cost < bestCost) {
+                        bestCost = cost;
+                        bestAxis = axis;
+                        bestBin = b;
+                        bestCMin = cMin;
+                        bestCMax = cMax;
+                    }
+                }
             }
-        );
+        }
 
-        int leftIdx = buildRecursive(begin, mid);
-        int rightIdx = buildRecursive(mid, end);
+        int midPos;
+
+        if (bestAxis != -1) {
+            double invRange = static_cast<double>(NUM_BINS) / (bestCMax - bestCMin);
+            auto midIt = std::partition(
+                _faceIdx.begin() + begin,
+                _faceIdx.begin() + end,
+                [&](int idx) {
+                    Vec3 c = _faces[idx].bbox.centroid();
+                    double coord = (bestAxis == 0) ? c.x : (bestAxis == 1 ? c.y : c.z);
+                    int b = static_cast<int>((coord - bestCMin) * invRange);
+                    if (b >= NUM_BINS) b = NUM_BINS - 1;
+                    return b <= bestBin;
+                }
+            );
+            midPos = static_cast<int>(midIt - _faceIdx.begin());
+        } else {
+            Vec3 ext = box.max - box.min;
+            int axis = 0;
+            if (ext.y > ext.x) axis = 1;
+            if (ext.z > (axis == 0 ? ext.x : ext.y)) axis = 2;
+            double mid = axis == 0 ? (box.min.x + box.max.x) * 0.5
+                       : axis == 1 ? (box.min.y + box.max.y) * 0.5
+                       : (box.min.z + box.max.z) * 0.5;
+            auto midIt = std::partition(
+                _faceIdx.begin() + begin,
+                _faceIdx.begin() + end,
+                [&](int idx) {
+                    Vec3 c = _faces[idx].bbox.centroid();
+                    double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
+                    return coord < mid;
+                }
+            );
+            midPos = static_cast<int>(midIt - _faceIdx.begin());
+        }
+
+        if (midPos == begin || midPos == end)
+            midPos = begin + (end - begin) / 2;
+
+        int leftIdx = buildRecursive(begin, midPos);
+        int rightIdx = buildRecursive(midPos, end);
         _nodes[nodeIdx].left = leftIdx;
         _nodes[nodeIdx].right = rightIdx;
         return nodeIdx;
