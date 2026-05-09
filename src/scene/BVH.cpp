@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: BVH.cpp
  * Author: Cannelle Gourdet - lankley
- * File description: BVH build (midpoint split along longest centroid axis) and traversal.
+ * File description: BVH with SAH binned evaluation for optimal tree quality.
+ *                   Each split candidate is scored by (SA(left)*N_left + SA(right)*N_right)/SA(parent).
+ *                   Falls back to longest-axis midpoint when all centroid projections coincide.
  */
 
 #include <algorithm>
@@ -10,7 +12,14 @@
 #include "BVH.hpp"
 #include "IPrimitive.hpp"
 
+static constexpr int NUM_BINS     = 12;
 static constexpr int MAX_LEAF_SIZE = 4;
+
+static double surfaceArea(const AABB &box) {
+    Vec3 d = box.max - box.min;
+    if (d.x < 0.0 || d.y < 0.0 || d.z < 0.0) return 0.0; // empty/degenerate
+    return 2.0 * (d.x * d.y + d.y * d.z + d.z * d.x);
+}
 
 void BVH::build(const std::vector<PrimitivePtr> &primitives) {
     _nodes.clear();
@@ -46,35 +55,118 @@ int BVH::buildRecursive(const std::vector<PrimitivePtr> &prims, int begin, int e
         return nodeIdx;
     }
 
-    AABB centroidBounds = AABB::empty();
-    for (int i = begin; i < end; i++) {
-        Vec3 c = prims[_primIndices[i]]->boundingBox().centroid();
-        centroidBounds = AABB::merge(centroidBounds, AABB(c, c));
-    }
-    Vec3 ext = centroidBounds.max - centroidBounds.min;
-    int axis = 0;
-    if (ext.y > ext.x) axis = 1;
-    if (ext.z > (axis == 0 ? ext.x : ext.y)) axis = 2;
+    struct Bin { AABB box = AABB::empty(); int count = 0; };
 
-    double mid = axis == 0 ? (centroidBounds.min.x + centroidBounds.max.x) * 0.5
-               : axis == 1 ? (centroidBounds.min.y + centroidBounds.max.y) * 0.5
-               : (centroidBounds.min.z + centroidBounds.max.z) * 0.5;
+    const double parentSA = surfaceArea(box);
+    double bestCost = static_cast<double>(count);
+    int bestAxis = -1;
+    int bestBin = -1;
+    double bestCMin = 0.0, bestCMax = 0.0;
 
-    auto midIt = std::partition(
-        _primIndices.begin() + begin,
-        _primIndices.begin() + end,
-        [&](int idx) {
-            Vec3 c = prims[idx]->boundingBox().centroid();
-            double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
-            return coord < mid;
+    if (parentSA > 0.0) {
+        for (int axis = 0; axis < 3; axis++) {
+            double cMin =  std::numeric_limits<double>::infinity();
+            double cMax = -std::numeric_limits<double>::infinity();
+            for (int i = begin; i < end; i++) {
+                Vec3 c = prims[_primIndices[i]]->boundingBox().centroid();
+                double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
+                if (coord < cMin)
+                    cMin = coord;
+                if (coord > cMax)
+                    cMax = coord;
+            }
+            if (cMax <= cMin) continue;
+
+            Bin bins[NUM_BINS];
+            double invRange = static_cast<double>(NUM_BINS) / (cMax - cMin);
+            for (int i = begin; i < end; i++) {
+                Vec3 c = prims[_primIndices[i]]->boundingBox().centroid();
+                double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
+                int b = static_cast<int>((coord - cMin) * invRange);
+                if (b >= NUM_BINS)
+                    b = NUM_BINS - 1;
+                bins[b].box = AABB::merge(bins[b].box, prims[_primIndices[i]]->boundingBox());
+                bins[b].count++;
+            }
+
+            AABB leftBox[NUM_BINS - 1];
+            int leftCnt[NUM_BINS - 1];
+            {
+                AABB lb = AABB::empty(); int lc = 0;
+                for (int b = 0; b < NUM_BINS - 1; b++) {
+                    lb = AABB::merge(lb, bins[b].box);
+                    lc += bins[b].count;
+                    leftBox[b] = lb;
+                    leftCnt[b] = lc;
+                }
+            }
+
+            AABB rightBox[NUM_BINS - 1];
+            int rightCnt[NUM_BINS - 1];
+            {
+                AABB rb = AABB::empty(); int rc = 0;
+                for (int b = NUM_BINS - 1; b >= 1; b--) {
+                    rb = AABB::merge(rb, bins[b].box);
+                    rc += bins[b].count;
+                    rightBox[b - 1] = rb;
+                    rightCnt[b - 1] = rc;
+                }
+            }
+
+            for (int b = 0; b < NUM_BINS - 1; b++) {
+                if (leftCnt[b] == 0 || rightCnt[b] == 0) continue;
+                double cost = (surfaceArea(leftBox[b]) * leftCnt[b] + surfaceArea(rightBox[b]) * rightCnt[b]) / parentSA;
+                if (cost < bestCost) {
+                    bestCost = cost;
+                    bestAxis = axis;
+                    bestBin = b;
+                    bestCMin = cMin;
+                    bestCMax = cMax;
+                }
+            }
         }
-    );
+    }
 
-    int midPos = static_cast<int>(midIt - _primIndices.begin());
+    int midPos;
+
+    if (bestAxis != -1) {
+        double invRange = static_cast<double>(NUM_BINS) / (bestCMax - bestCMin);
+        auto midIt = std::partition(
+            _primIndices.begin() + begin,
+            _primIndices.begin() + end,
+            [&](int idx) {
+                Vec3 c = prims[idx]->boundingBox().centroid();
+                double coord = (bestAxis == 0) ? c.x : (bestAxis == 1 ? c.y : c.z);
+                int b = static_cast<int>((coord - bestCMin) * invRange);
+                if (b >= NUM_BINS) b = NUM_BINS - 1;
+                return b <= bestBin;
+            }
+        );
+        midPos = static_cast<int>(midIt - _primIndices.begin());
+    } else {
+        Vec3 ext = box.max - box.min;
+        int axis = 0;
+        if (ext.y > ext.x) axis = 1;
+        if (ext.z > (axis == 0 ? ext.x : ext.y)) axis = 2;
+        double mid = axis == 0 ? (box.min.x + box.max.x) * 0.5
+                   : axis == 1 ? (box.min.y + box.max.y) * 0.5
+                   : (box.min.z + box.max.z) * 0.5;
+        auto midIt = std::partition(
+            _primIndices.begin() + begin,
+            _primIndices.begin() + end,
+            [&](int idx) {
+                Vec3 c = prims[idx]->boundingBox().centroid();
+                double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
+                return coord < mid;
+            }
+        );
+        midPos = static_cast<int>(midIt - _primIndices.begin());
+    }
+
     if (midPos == begin || midPos == end)
         midPos = begin + count / 2;
 
-    int leftChild  = buildRecursive(prims, begin, midPos);
+    int leftChild = buildRecursive(prims, begin, midPos);
     int rightChild = buildRecursive(prims, midPos, end);
     _nodes[nodeIdx].left = leftChild;
     _nodes[nodeIdx].right = rightChild;

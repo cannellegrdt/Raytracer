@@ -55,10 +55,10 @@ struct AABB {
 
     /// @brief Slab-method ray-AABB intersection test.
     /// @param ray  Ray to test.
-    /// @param tMin Near bound of the valid interval.
-    /// @param tMax Far bound of the valid interval.
+    /// @param tMin Near bound (updated to entry t, clamped to 0 for inside-box rays).
+    /// @param tMax Far bound (updated to exit t).
     /// @return True if the ray intersects the box within [tMin, tMax].
-    bool intersect(const Ray &ray, double tMin, double tMax) const {
+    bool intersect(const Ray &ray, double &tMin, double &tMax) const {
         double invDx = 1.0 / ray.direction.x;
         double tx0 = (min.x - ray.origin.x) * invDx;
         double tx1 = (max.x - ray.origin.x) * invDx;
@@ -95,7 +95,11 @@ struct AABB {
             tMin = tz0;
         if (tz1 < tMax)
             tMax = tz1;
-        return tMax > tMin;
+        if (tMax <= tMin)
+            return false;
+
+        tMin = std::max(tMin, 0.0);
+        return true;
     }
 };
 
