@@ -20,6 +20,7 @@ Files are parsed by **libconfig++** and loaded by `LibconfigLoader`.
     3.8. [Cube](#cube)
     3.9. [Tanglecube](#tanglecube)
     3.10. [Triangle](#triangle)
+    3.11. [OBJ Mesh](#obj-mesh)
 4. [Transforms on primitives](#4-transforms-on-primitives)
 5. [Groups (scene graph)](#5-groups-scene-graph)
 6. [Materials](#6-materials)
@@ -95,6 +96,7 @@ primitives = {
     torus = ( ... );
     cubes = ( ... );
     tanglecubes = ( ... );
+    obj_meshes = ( ... );
 };
 ```
 
@@ -336,6 +338,55 @@ triangles = (
 - UV coordinates are generated: `u` and `v` from the barycentric coordinates of the hit point
 - Tangent and bitangent vectors are provided for normal mapping support
 - The triangle supports all transform types: translation, rotation, scale, shear, and transformation_matrix
+
+---
+
+### OBJ Mesh
+
+OBJ meshes are loaded from external `.obj` wavefront files at render time. They are parsed into triangles internally and organized into a BVH for fast intersection.
+
+```cfg
+obj_meshes = (
+    {
+        file = "path/to/mesh.obj";
+        material = { type = "flat"; color = { r = 0.8; g = 0.2; b = 0.2; }; };
+    }
+);
+```
+
+#### Required fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | string | Path to the OBJ file (relative to the working directory) |
+| `material` | Material | Surface material (same as for other primitives) |
+
+#### Supported transforms
+
+OBJ meshes support all standard transform fields:
+
+- `translation` — moves the mesh in world space
+- `rotation` — rotates around X, Y, Z axes (radians)
+- `scale` — scales along each axis (no zero components)
+- `shear` — shears the mesh along each axis
+- `transformation_matrix` — full 4×4 homogeneous matrix (overrides other transforms)
+
+All transforms are applied in the standard order: **Scale → Shear → Rotation → Translation → Transformation matrix**.
+
+#### OBJ format support
+
+- Vertex positions (`v x y z`)
+- Vertex normals (`vn nx ny nz`)
+- Face definitions (`f v1 v2 v3` or `f v1//n1 v2//n2 v3//n3`)
+- Only triangular faces are supported; polygons with > 3 vertices are automatically triangulated
+- Negative indices are supported (relative indexing from end of list)
+- Vertex UV coordinates (`vt`) are parsed but not used for texturing (UV comes from the primitive's own mapping)
+
+**Notes:**
+- The OBJ file is parsed lazily on first intersection call (when `configure` is invoked)
+- Face normals are auto-computed from the cross product of edges if vertex normals are absent
+- The mesh is wrapped in a BVH (median-split) for O(log n) ray traversal
+- The `file` path is relative to the working directory where the raytracer is executed
 
 ---
 

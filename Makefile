@@ -64,6 +64,7 @@ plugins/%.so: src/plugins/%.cpp
 
 unit_tests: $(LIB_OBJ) $(TEST_OBJ)
 	$(CXX) $(filter-out -Werror,$(CXXFLAGS)) -o $(TEST_BIN) $^ $(LDFLAGS) -lcriterion
+	mkdir -p textures
 	./$(TEST_BIN)
 
 

@@ -72,6 +72,11 @@ public:
     /// @return Reference to this builder for chaining.
     PrimitiveBuilder &setParams(const std::unordered_map<std::string, double> &params);
 
+    /// @brief Sets the source file path for file-based primitives (e.g. OBJ meshes).
+    /// @param path Path to the source file.
+    /// @return Reference to this builder for chaining.
+    PrimitiveBuilder &setFile(const std::string &path);
+
     /// @brief Builds the primitive with all configured options.
     /// @return Unique pointer to the constructed primitive.
     PrimitivePtr build();
@@ -89,6 +94,7 @@ private:
     std::optional<ShearFactors> _shear;                ///< Shear factors.
     std::optional<Mat4> _transformMatrix;              ///< 4x4 matrix.
     std::unordered_map<std::string, double> _params;   ///< Geometry parameters for configure().
+    std::optional<std::string> _filePath;              ///< Source file path for file-based primitives.
 };
 
 #endif /* PRIMITIVEBUILDER_HPP_ */

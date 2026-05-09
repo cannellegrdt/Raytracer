@@ -221,6 +221,56 @@ static std::vector<PrimitivePtr> parsePrimitivesBlock(
             continue;
         }
 
+        if (sectionName == "obj_meshes") {
+            for (int j = 0; j < section.getLength(); j++) {
+                const libconfig::Setting &elem = section[j];
+
+                if (!elem.exists("file"))
+                    throw std::runtime_error("OBJ mesh entry missing required 'file' field");
+                std::string filePath = elem["file"].c_str();
+
+                std::shared_ptr<IMaterial> material;
+                try {
+                    material = buildMaterial(elem["material"]);
+                } catch (const libconfig::SettingNotFoundException &e) {
+                    throw std::runtime_error(std::string("Missing material field: ") + e.getPath());
+                }
+
+                builder.setType("obj").setFile(filePath).setMaterial(material);
+
+                if (elem.exists("transformation_matrix")) {
+                    const libconfig::Setting &tm = elem["transformation_matrix"];
+                    Mat4 matrix{};
+                    for (int row = 0; row < 4; row++)
+                        for (int col = 0; col < 4; col++)
+                            matrix.m[row][col] = toDouble(tm[row][col]);
+                    builder.setTransformMatrix(matrix);
+                }
+                if (elem.exists("translation")) {
+                    const libconfig::Setting &t = elem["translation"];
+                    builder.setTranslation({toDouble(t["x"]), toDouble(t["y"]), toDouble(t["z"])});
+                }
+                if (elem.exists("rotation")) {
+                    const libconfig::Setting &r = elem["rotation"];
+                    builder.setRotation({toDouble(r["x"]), toDouble(r["y"]), toDouble(r["z"])});
+                }
+                if (elem.exists("shear")) {
+                    const libconfig::Setting &sh = elem["shear"];
+                    builder.setShear({toDouble(sh["sxy"]), toDouble(sh["sxz"]),
+                        toDouble(sh["syx"]), toDouble(sh["syz"]),
+                        toDouble(sh["szx"]), toDouble(sh["szy"])});
+                }
+                if (elem.exists("scale")) {
+                    const libconfig::Setting &s = elem["scale"];
+                    builder.setScale({toDouble(s["x"]), toDouble(s["y"]), toDouble(s["z"])});
+                }
+
+                result.push_back(builder.build());
+                builder.reset();
+            }
+            continue;
+        }
+
         auto it = kMapTablePrim.find(sectionName);
         if (it == kMapTablePrim.end()) {
             std::cerr << "Warning: unknown primitive group '" << sectionName << "', skipping.\n";

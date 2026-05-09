@@ -48,9 +48,9 @@ public:
 
     ScatterResult scatter(const Ray &, const HitRecord &) const override {
         if (scatterEnabled) {
-            return ScatterResult{attenuation, scatteredRay};
+            return ScatterResult{attenuation, scatteredRay, std::nullopt};
         }
-        return ScatterResult{attenuation, std::nullopt};
+        return ScatterResult{attenuation, std::nullopt, std::nullopt};
     }
 };
 

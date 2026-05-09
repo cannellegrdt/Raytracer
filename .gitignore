@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+!obj_models/*.obj
 
 # Precompiled Headers
 *.gch
@@ -56,3 +57,4 @@ unit_tests
 todo.md
 raytracer
 *.ppm
+!textures/*.ppm

@@ -50,6 +50,11 @@ PrimitiveBuilder &PrimitiveBuilder::setParams(const std::unordered_map<std::stri
     return *this;
 }
 
+PrimitiveBuilder &PrimitiveBuilder::setFile(const std::string &path) {
+    _filePath = path;
+    return *this;
+}
+
 void PrimitiveBuilder::reset() {
     _type.clear();
     _material.reset();
@@ -59,6 +64,7 @@ void PrimitiveBuilder::reset() {
     _shear.reset();
     _transformMatrix.reset();
     _params.clear();
+    _filePath.reset();
 }
 
 PrimitivePtr PrimitiveBuilder::build() {
@@ -70,6 +76,8 @@ PrimitivePtr PrimitiveBuilder::build() {
         throw std::runtime_error("PrimitiveBuilder::build(): unknown primitive type '" + _type + "'");
 
     PrimitivePtr primitive = std::move(*optBase);
+    if (_filePath)
+        primitive->setFilePath(*_filePath);
     primitive->configure(_params, _material);
 
     if (_scale)

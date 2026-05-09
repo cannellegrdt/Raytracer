@@ -201,7 +201,9 @@ std::optional<HitRecord> BVH::traverseNode(int nodeIdx, const Ray &ray, double t
     const std::vector<PrimitivePtr> &prims) const {
     const Node &node = _nodes[nodeIdx];
 
-    if (!node.box.intersect(ray, tMin, tMax))
+    double localMin = tMin;
+    double localMax = tMax;
+    if (!node.box.intersect(ray, localMin, localMax))
         return std::nullopt;
 
     if (node.left == -1) {
