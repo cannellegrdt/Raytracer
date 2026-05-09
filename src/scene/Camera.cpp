@@ -20,21 +20,21 @@ Camera::Camera(Vec3 position, Vec3 rotation, double fov, int width, int height)
     if (fov <= 0.0 || fov >= 180.0)
         throw std::invalid_argument("Camera FOV must be in (0, 180) degrees (got " +
             std::to_string(fov) + ")");
+
+    double toRad = M_PI / 180.0;
+    _halfHeight = tan(_fov / 2 * toRad);
+    _halfWidth = _halfHeight * (static_cast<double>(_width) / _height);
+    _rotMatrix = rotateZ(_rotation.z * toRad) * rotateY(_rotation.y * toRad) * rotateX(_rotation.x * toRad);
 }
 
 Ray Camera::generateRay(double x, double y) const {
-    double toRad = M_PI / 180;
-    double halfHeight = tan(_fov / 2 * toRad);
-    double halfWidth = halfHeight * (static_cast<double>(_width) / _height);
-
     double w = (x + 0.5) / _width * 2.0 - 1.0;
     double h = 1 - (y + 0.5) / _height * 2.0;
 
-    double pixelX = w * halfWidth;
-    double pixelY = h * halfHeight;
+    double pixelX = w * _halfWidth;
+    double pixelY = h * _halfHeight;
 
     Vec3 direction = normalize(Vec3(pixelX, pixelY, 1.0));
-    Mat3 rotation = rotateZ(_rotation.z * toRad) * rotateY(_rotation.y * toRad) * rotateX(_rotation.x * toRad);
 
-    return Ray{_position, rotation * direction};
+    return Ray{_position, _rotMatrix * direction};
 }

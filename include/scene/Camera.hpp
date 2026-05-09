@@ -9,6 +9,7 @@
     #define CAMERA_HPP_
     #include "Vec3.hpp"
     #include "Ray.hpp"
+    #include "Mat3.hpp"
 
 /// @brief Camera for raytracing.
 /// @details Generates rays from pixel coordinates for rendering.
@@ -37,11 +38,14 @@ public:
     int getHeight() const { return _height; }
 
 private:
-    Vec3 _position;    ///< Camera position in world space.
-    Vec3 _rotation;    ///< Camera rotation (Euler angles).
-    double _fov;       ///< Field of view in degrees.
-    int _width;        ///< Image width in pixels.
-    int _height;       ///< Image height in pixels.
+    Vec3 _position;     ///< Camera position in world space.
+    Vec3 _rotation;     ///< Camera rotation (Euler angles).
+    double _fov;        ///< Field of view in degrees.
+    int _width;         ///< Image width in pixels.
+    int _height;        ///< Image height in pixels.
+    double _halfHeight; ///< Precomputed half height for ray generation.
+    double _halfWidth;  ///< Precomputed half width for ray generation.
+    Mat3 _rotMatrix;    ///< Precomputed rotation matrix.
 };
 
 #endif /* CAMERA_HPP_ */
