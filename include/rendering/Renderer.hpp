@@ -33,8 +33,9 @@ private:
     /// @param ray The ray to trace.
     /// @param scene The scene to trace against.
     /// @param depth Current recursion depth.
+    /// @param nbAORays Number of ambient occlusion rays.
     /// @return Color result from tracing the ray.
-    Color traceRay(const Ray &ray, const Scene &scene, int depth) const;
+    Color traceRay(const Ray &ray, const Scene &scene, int depth, int nbAORays) const;
 
     /// @brief Finds the closest hit along a ray.
     /// @param ray The ray to test.

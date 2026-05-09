@@ -29,7 +29,7 @@
 class RendererTestAccessor {
 public:
     static Color traceRay(const Renderer &r, const Ray &ray, const Scene &scene, int depth) {
-        return r.traceRay(ray, scene, depth);
+        return r.traceRay(ray, scene, depth, 16);
     }
     static std::optional<HitRecord> closestHit(const Ray &ray, const Scene &scene) {
         return Renderer::closestHit(ray, scene);

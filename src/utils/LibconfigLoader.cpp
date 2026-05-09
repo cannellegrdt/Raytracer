@@ -377,6 +377,7 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
     }
 
     std::optional<Supersampling> antialiasingOpt;
+    std::optional<int> nbAORaysOpt;
     if (cfg.exists("renderer")) {
         const libconfig::Setting &renderer = cfg.lookup("renderer");
         int samples = 1;
@@ -394,6 +395,9 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
                 threshold = static_cast<double>(aa["threshold"]);
         }
         antialiasingOpt = Supersampling{samples, type, threshold};
+
+        if (renderer.exists("nbAORays"))
+            nbAORaysOpt = static_cast<int>(renderer["nbAORays"]);
     }
 
     Scene scene;
@@ -454,6 +458,12 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
             if (!cameraOpt && importedCtx.camera)
                 cameraOpt = importedCtx.camera;
 
+            if (!antialiasingOpt && importedCtx.antialiasing)
+                antialiasingOpt = importedCtx.antialiasing;
+
+            if (!nbAORaysOpt && importedCtx.nbAORays)
+                nbAORaysOpt = importedCtx.nbAORays;
+
             auto &importedPrims = importedCtx.scene.primitives();
             for (auto &prim : importedPrims)
                 scene.addPrimitive(applyTransforms(std::move(prim), imp));
@@ -477,5 +487,5 @@ SceneContext LibconfigLoader::load(const std::string &filePath, PrimitiveFactory
 
     if (!cameraOpt)
         throw std::runtime_error("No camera found in the configuration files");
-    return SceneContext{std::move(scene), cameraOpt, antialiasingOpt};
+    return SceneContext{std::move(scene), cameraOpt, antialiasingOpt, nbAORaysOpt};
 }

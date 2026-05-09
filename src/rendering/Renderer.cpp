@@ -71,6 +71,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
     int samples = (context.antialiasing) ? context.antialiasing->samples : 1;
     std::string aaType = (context.antialiasing) ? context.antialiasing->type : "uniform";
     double threshold = (context.antialiasing) ? context.antialiasing->threshold : 0.0;
+    int nbAORays = (context.nbAORays) ? *context.nbAORays : 16;
 
     std::vector<Color> pixelBuffer(width * height);
 
@@ -89,7 +90,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
                 for (int y=yStart; y<yEnd; y++) {
                     for (int x=xStart; x<xEnd; x++) {
                         Ray ray = cam.generateRay(static_cast<double>(x), static_cast<double>(y));
-                        pixelBuffer[y * width + x] = traceRay(ray, context.scene, MAX_DEPTH);
+                        pixelBuffer[y * width + x] = traceRay(ray, context.scene, MAX_DEPTH, nbAORays);
                     }
                 }
             }
@@ -145,7 +146,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
                                 double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
                                 double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
                                 Ray ray = cam.generateRay(u, v);
-                                refinedColor = refinedColor + traceRay(ray, context.scene, MAX_DEPTH);
+                                refinedColor = refinedColor + traceRay(ray, context.scene, MAX_DEPTH, nbAORays);
                             }
                         }
                         pixelBuffer[y * width + x] = refinedColor * (1.0 / (samples * samples));
@@ -171,7 +172,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
                                 double u = static_cast<double>(x) + (static_cast<double>(i) + 0.5) / samples;
                                 double v = static_cast<double>(y) + (static_cast<double>(j) + 0.5) / samples;
                                 Ray ray = cam.generateRay(u, v);
-                                pixelColor = pixelColor + traceRay(ray, context.scene, MAX_DEPTH);
+                                pixelColor = pixelColor + traceRay(ray, context.scene, MAX_DEPTH, nbAORays);
                             }
                         }
                         pixelBuffer[y * width + x] = pixelColor * (1.0 / (samples * samples));
@@ -204,7 +205,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
         throw std::runtime_error("Write error on output file: " + outputPath);
 }
 
-Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
+Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth, int nbAORays) const {
     auto hit = closestHit(ray, scene);
     if (!hit)
         return scene.backgroundColor();
@@ -219,7 +220,6 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
         LightSample sample = light->getSample(hit->point, hit->normal);
 
         if (sample.isAmbient) {
-            int nbAORays = 16;
             int unoccluded = 0;
 
             for (int i=0; i<nbAORays; i++) {
@@ -268,7 +268,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
 
     Color result = scattered.attenuation * lightDiffuse + lightSpecular;
     if (depth > 0 && scattered.scatteredRay) {
-        Color indirect = traceRay(*scattered.scatteredRay, scene, depth - 1);
+        Color indirect = traceRay(*scattered.scatteredRay, scene, depth - 1, nbAORays);
         result += scattered.attenuation * indirect;
     }
     return result;

@@ -846,8 +846,18 @@ renderer = {
         type = "uniform";    # "uniform" or "adaptive"
         threshold = 0.01;    # only used when type = "adaptive"
     };
+    nbAORays = 8;           # Number of ambient occlusion rays
 };
 ```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `antialiasing` | section | - | Antialiasing settings (see below) |
+| `nbAORays` | int | 16 | Number of rays cast per ambient occlusion sample (> 0) |
+
+**Ambient occlusion rays (`nbAORays`)**: Controls the quality vs performance tradeoff for ambient occlusion lighting. Each ambient light samples the scene by casting multiple rays in random directions within the surface hemisphere. Higher values produce smoother, more accurate occlusion but increase render time linearly. Lower values (4-8) work well for preview renders.
+
+### Antialiasing fields
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

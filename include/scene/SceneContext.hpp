@@ -23,6 +23,7 @@ struct SceneContext {
     Scene scene;                               ///< Scene with all primitives and lights.
     std::optional<Camera> camera;              ///< Camera for rendering, optional to allow inheritance from imports.
     std::optional<Supersampling> antialiasing; ///< Supersampling to enable antialiasing.
+    std::optional<int> nbAORays;               ///< Number of ambient occlusion rays (default: 16).
 };
 
 #endif /* SCENECONTEXT_HPP_ */
