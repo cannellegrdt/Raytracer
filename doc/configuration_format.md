@@ -97,6 +97,7 @@ primitives = {
     cubes = ( ... );
     tanglecubes = ( ... );
     obj_meshes = ( ... );
+    mandelbulbs = ( ... );
 };
 ```
 
@@ -338,6 +339,43 @@ triangles = (
 - UV coordinates are generated: `u` and `v` from the barycentric coordinates of the hit point
 - Tangent and bitangent vectors are provided for normal mapping support
 - The triangle supports all transform types: translation, rotation, scale, shear, and transformation_matrix
+
+---
+
+### Mandelbulb
+
+```cfg
+mandelbulbs = (
+    {
+        x = 0.0; y = 0.0; z = 0.0;
+        s = 1.0;
+        power = 8.0;
+        iters = 20;
+        bailout = 2.0;
+        material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
+    }
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `x`, `y`, `z` | double | Center of the Mandelbulb |
+| `s` | double | Scale (> 0); controls the overall size |
+| `power` | double | Power of the fractal (e.g., 8.0 for classic Mandelbulb) (> 0) |
+| `iters` | int | Maximum iterations for the fractal computation (> 0) |
+| `bailout` | double | Bailout value for divergence detection (> 0) |
+| `material` | Material | Surface material |
+
+**Notes:**
+- The Mandelbulb is a 3D fractal (generalization of the Mandelbrot set), rendered using ray marching with a distance estimator.
+- The surface is defined implicitly by iterating `z = z^power + c` in spherical coordinates until divergence.
+- Ray marching steps along the ray, evaluating the distance to the surface at each point.
+- The bounding box is centered at `(x,y,z)` with radius `s * bailout`.
+- UV coordinates are generated: `u` from longitude (atan2), `v` from latitude (acos).
+- Tangent and bitangent vectors are computed from the normal for normal mapping support.
+- Higher `power` values create more complex, spiky shapes; `power = 2` approximates a sphere.
+- Tune `iters` for detail vs performance; `bailout` typically 2.0.
+- The fractal is bounded, so no infinite marching.
 
 ---
 
