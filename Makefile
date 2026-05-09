@@ -8,7 +8,7 @@
 CXX	:=	g++
 INCLUDE_DIRS	:=	$(shell find include/ -type d)
 
-CXXFLAGS	:=	-Wall -Wextra -Werror -std=c++20
+CXXFLAGS	:=	-Wall -Wextra -Werror -std=c++20 -fopenmp
 CXXFLAGS	+=	$(addprefix -I,$(INCLUDE_DIRS))
 CXXFLAGS	+=	-fPIC
 

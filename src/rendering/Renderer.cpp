@@ -10,6 +10,7 @@
 #include <limits>
 #include <random>
 #include <cmath>
+#include <omp.h>
 #include "Renderer.hpp"
 #include "IMaterial.hpp"
 #include "ScatterResult.hpp"
@@ -18,9 +19,8 @@
 
 constexpr int MAX_DEPTH = 10;
 
-static std::random_device rd;
-static std::mt19937 gen(rd());
-static std::uniform_real_distribution<double> dist(0.0, 1.0);
+thread_local std::mt19937 gen(std::random_device{}());
+thread_local std::uniform_real_distribution<double> dist(0.0, 1.0);
 
 static Vec3 randomInUnitSphere() {
     while (true) {
@@ -70,6 +70,9 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
 
     std::vector<Color> pixelBuffer(width * height);
 
+    context.scene.bvh();
+
+#pragma omp parallel for schedule(dynamic, 4)
     for (int y=0; y<height; y++) {
         for (int x=0; x<width; x++) {
             Ray ray = cam.generateRay(static_cast<double>(x), static_cast<double>(y));
@@ -79,6 +82,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
 
     if (aaType == "adaptive" && samples > 1) {
         std::vector<bool> needRefine(width * height, false);
+#pragma omp parallel for schedule(dynamic, 4)
         for (int y=0; y<height; y++) {
             for (int x=0; x<width; x++) {
                 const Color &currentColor = pixelBuffer[y * width + x];
@@ -105,6 +109,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
             }
         }
 
+#pragma omp parallel for schedule(dynamic, 4)
         for (int y=0; y<height; y++) {
             for (int x=0; x<width; x++) {
                 if (!needRefine[y * width + x])
@@ -123,6 +128,7 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
             }
         }
     } else if (samples > 1) {
+#pragma omp parallel for schedule(dynamic, 4)
         for (int y=0; y<height; y++) {
             for (int x=0; x<width; x++) {
                 Color pixelColor{0, 0, 0};

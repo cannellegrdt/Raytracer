@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <omp.h>
 #include "BVH.hpp"
 #include "IPrimitive.hpp"
 
@@ -17,7 +18,7 @@ static constexpr int MAX_LEAF_SIZE = 4;
 
 static double surfaceArea(const AABB &box) {
     Vec3 d = box.max - box.min;
-    if (d.x < 0.0 || d.y < 0.0 || d.z < 0.0) return 0.0; // empty/degenerate
+    if (d.x < 0.0 || d.y < 0.0 || d.z < 0.0) return 0.0;
     return 2.0 * (d.x * d.y + d.y * d.z + d.z * d.x);
 }
 

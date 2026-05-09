@@ -34,9 +34,8 @@ ScatterResult Refraction::scatter(const Ray &ray, const HitRecord &hit) const {
     double r0 = ((1 - _ior) / (1 + _ior)) * ((1 - _ior) / (1 + _ior));
     double reflectance = r0 + (1 - r0) * pow(1 - cosTheta, 5);
     
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> dist(0, 1);
+    thread_local std::mt19937 gen(std::random_device{}());
+    thread_local std::uniform_real_distribution<double> dist(0.0, 1.0);
     double nbRandom = dist(gen);
     if (nbRandom < reflectance)
         return reflection(dir, hit, _color);
