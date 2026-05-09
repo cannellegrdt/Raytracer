@@ -10,6 +10,8 @@
 #include <limits>
 #include <random>
 #include <cmath>
+#include <vector>
+#include <cstdint>
 #include <omp.h>
 #include "Renderer.hpp"
 #include "IMaterial.hpp"
@@ -147,20 +149,24 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
         }
     }
 
-    std::ofstream outFile(outputPath);
+    std::ofstream outFile(outputPath, std::ios::binary);
     if (!outFile)
         throw std::runtime_error("Error: cannot open output file '" + outputPath + "'");
 
-    outFile << "P3\n" << width << ' ' << height << "\n255\n";
+    outFile << "P6\n" << width << ' ' << height << "\n255\n";
 
-    for (int y=0; y<height; y++) {
-        for (int x=0; x<width; x++) {
+    std::vector<uint8_t> rgbData(width * height * 3);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
             const Color &pixelColor = pixelBuffer[y * width + x];
-            outFile << toPPMByte(pixelColor.x) << ' '
-                    << toPPMByte(pixelColor.y) << ' '
-                    << toPPMByte(pixelColor.z) << '\n';
+            int idx = (y * width + x) * 3;
+            rgbData[idx] = static_cast<uint8_t>(toPPMByte(pixelColor.x));
+            rgbData[idx + 1] = static_cast<uint8_t>(toPPMByte(pixelColor.y));
+            rgbData[idx + 2] = static_cast<uint8_t>(toPPMByte(pixelColor.z));
         }
     }
+    outFile.write(reinterpret_cast<const char*>(rgbData.data()), rgbData.size());
+
     outFile.close();
     if (outFile.fail())
         throw std::runtime_error("Write error on output file: " + outputPath);
@@ -202,7 +208,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth) const {
             Ray sRay{hit->point + RayBias * hit->normal, sample.direction};
             double remaining = sample.distance;
             bool fullyBlocked = false;
-            for (int si = 0; si < 8; ++si) {
+            for (int si = 0; si < 8; si++) {
                 auto blocker = closestHit(sRay, scene);
                 if (!blocker || blocker->t >= remaining) break;
                 if (!blocker->material->isTransmissive()) { fullyBlocked = true; break; }

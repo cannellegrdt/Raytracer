@@ -665,7 +665,7 @@ material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
 
 ### Textured material
 
-The `"textured"` material reads pixel color from a **PPM image** (P3 format) using the UV coordinates provided by the primitive at the hit point.
+The `"textured"` material reads pixel color from a **PPM image** (P3 or P6 format) using the UV coordinates provided by the primitive at the hit point.
 
 ```cfg
 material = {
@@ -678,7 +678,7 @@ material = {
 |-------|------|-------------|
 | `texture` | string | Path to the PPM file (P3 ASCII format, relative to the working directory) |
 
-**Supported format:** P3 ASCII PPM only. Binary PPM (P6) is not supported.
+**Supported format:** P3 ASCII PPM and P6 binary PPM.
 
 **Fallback:** If the file cannot be opened, the material falls back to a magenta color (`1.0, 0.0, 1.0`) so missing textures are immediately visible without crashing.
 
@@ -754,7 +754,7 @@ The `"normalmap"` material wraps a **base material** and uses a normal map textu
 
 **How it works:**
 - The base material provides the surface appearance (color, reflection, etc.)
-- A normal map texture (PPM P3 format) encodes perturbed normals in tangent space
+- A normal map texture (PPM P3 or P6 format) encodes perturbed normals in tangent space
 - At each hit point, the normal is read from the texture and transformed from tangent space to world space using the TBN matrix
 - The perturbed normal affects diffuse and specular lighting calculations
 

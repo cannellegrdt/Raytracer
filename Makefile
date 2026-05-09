@@ -51,7 +51,7 @@ $(NAME): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(TEST_OBJ): %.o: %.cpp
-	$(CXX) $(filter-out -Werror,$(CXXFLAGS)) -DUNIT_TEST -c $< -o $@
+	$(CXX) $(filter-out -Werror -fopenmp,$(CXXFLAGS)) -DUNIT_TEST -c $< -o $@
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -63,7 +63,7 @@ plugins/%.so: src/plugins/%.cpp
 
 
 unit_tests: $(LIB_OBJ) $(TEST_OBJ)
-	$(CXX) $(filter-out -Werror,$(CXXFLAGS)) -o $(TEST_BIN) $^ $(LDFLAGS) -lcriterion
+	$(CXX) $(filter-out -Werror -fopenmp,$(CXXFLAGS)) -fopenmp -o $(TEST_BIN) $^ $(LDFLAGS) -lcriterion
 	mkdir -p textures
 	./$(TEST_BIN)
 

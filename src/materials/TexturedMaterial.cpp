@@ -10,6 +10,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
+#include <vector>
+#include <cstdint>
 
 TexturedMaterial::TexturedMaterial(const std::string &filePath) {
     try {
@@ -39,21 +41,28 @@ ScatterResult TexturedMaterial::scatter(const Ray &/*ray*/, const HitRecord &hit
 }
 
 void TexturedMaterial::loadPPM(const std::string &filePath) {
-    std::ifstream file(filePath);
+    std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open())
         throw std::runtime_error("Cannot open texture file: " + filePath);
 
     auto skipComments = [&]() {
-        std::string line;
-        while ((file >> std::ws).peek() == '#')
-            std::getline(file, line);
+        char c;
+        while ((file >> std::ws).get(c)) {
+            if (c == '#') {
+                std::string line;
+                std::getline(file, line);
+            } else {
+                file.unget();
+                break;
+            }
+        }
     };
 
     skipComments();
     std::string magic;
     file >> magic;
-    if (magic != "P3")
-        throw std::runtime_error("Only P3 PPM format is supported: " + filePath);
+    if (magic != "P3" && magic != "P6")
+        throw std::runtime_error("Unsupported PPM format (only P3 and P6): " + filePath);
 
     skipComments();
     file >> _width;
@@ -62,16 +71,32 @@ void TexturedMaterial::loadPPM(const std::string &filePath) {
     skipComments();
     int maxVal;
     file >> maxVal;
+    file.get();
 
     _pixels.resize(_width * _height);
-    for (int i = 0; i < _width * _height; ++i) {
-        int r, g, b;
-        if (!(file >> r >> g >> b))
-            throw std::runtime_error("Invalid PPM pixel data in: " + filePath);
-        _pixels[i] = Color{
-            static_cast<double>(r) / maxVal,
-            static_cast<double>(g) / maxVal,
-            static_cast<double>(b) / maxVal
-        };
+    if (magic == "P3") {
+        for (size_t i=0; i<_pixels.size(); i++) {
+            int r, g, b;
+            if (!(file >> r >> g >> b))
+                throw std::runtime_error("Invalid PPM pixel data in: " + filePath);
+            _pixels[i] = Color{
+                static_cast<double>(r) / maxVal,
+                static_cast<double>(g) / maxVal,
+                static_cast<double>(b) / maxVal
+            };
+        }
+    } else {
+        std::vector<uint8_t> data(_pixels.size() * 3);
+        file.read(reinterpret_cast<char*>(data.data()), data.size());
+        if (file.gcount() != static_cast<std::streamsize>(data.size()))
+            throw std::runtime_error("Incomplete PPM binary data in: " + filePath);
+        for (size_t i=0; i<_pixels.size(); i++) {
+            size_t idx = i * 3;
+            _pixels[i] = Color{
+                static_cast<double>(data[idx]) / maxVal,
+                static_cast<double>(data[idx + 1]) / maxVal,
+                static_cast<double>(data[idx + 2]) / maxVal
+            };
+        }
     }
 }
