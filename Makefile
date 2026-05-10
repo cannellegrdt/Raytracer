@@ -13,6 +13,7 @@ CXXFLAGS	+=	$(addprefix -I,$(INCLUDE_DIRS))
 CXXFLAGS	+=	-fPIC
 
 LDFLAGS	:=	-lconfig++ -ldl
+SFML_LIBS	:=	-lsfml-graphics -lsfml-window -lsfml-system
 
 NAME	:=	raytracer
 TEST_BIN	:=	unit_tests
@@ -48,7 +49,7 @@ VALGRIND_FLAGS	:=	--tool=memcheck \
 all: $(NAME) $(PLUGINS)
 
 $(NAME): $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(SFML_LIBS)
 
 $(TEST_OBJ): %.o: %.cpp
 	$(CXX) $(filter-out -Werror -fopenmp,$(CXXFLAGS)) -DUNIT_TEST -c $< -o $@
@@ -63,7 +64,7 @@ plugins/%.so: src/plugins/%.cpp
 
 
 unit_tests: $(LIB_OBJ) $(TEST_OBJ)
-	$(CXX) $(filter-out -Werror -fopenmp,$(CXXFLAGS)) -fopenmp -o $(TEST_BIN) $^ $(LDFLAGS) -lcriterion
+	$(CXX) $(filter-out -Werror -fopenmp,$(CXXFLAGS)) -fopenmp -o $(TEST_BIN) $^ $(LDFLAGS) -lcriterion $(SFML_LIBS)
 	mkdir -p textures
 	./$(TEST_BIN)
 
@@ -81,7 +82,7 @@ coverage: fclean
 _run_coverage: CXXFLAGS := $(filter-out -Werror,$(CXXFLAGS)) $(_COV_FLAGS)
 _run_coverage: LDFLAGS  := $(LDFLAGS) $(_COV_FLAGS)
 _run_coverage: $(LIB_OBJ) $(TEST_OBJ)
-	$(CXX) $(CXXFLAGS) -o $(TEST_BIN) $^ $(LDFLAGS) -lcriterion
+	$(CXX) $(CXXFLAGS) -o $(TEST_BIN) $^ $(LDFLAGS) -lcriterion $(SFML_LIBS)
 	./$(TEST_BIN)
 	lcov --capture --directory . --output-file coverage.info \
 		--ignore-errors mismatch \

@@ -7,34 +7,56 @@
 
 #include <filesystem>
 #include <iostream>
+#include <string>
+#include <atomic>
+#include <csignal>
 #include "Factories.hpp"
 #include "LibconfigLoader.hpp"
 #include "Renderer.hpp"
 #include "PluginLoader.hpp"
 
-/// @brief Prints usage help to standard output.
-static void printHelp() {
-    std::cout << "USAGE: ./raytracer <scene_file>\n"
-              << "\tscene_file\tpath to a .cfg scene file\n";
+static std::atomic<bool> g_shouldStop{false};
+
+static void signalHandler(int) {
+    g_shouldStop.store(true, std::memory_order_relaxed);
 }
 
-/// @brief Main entry point of the raytracer.
-/// @param argc Number of command-line arguments.
-/// @param argv Array of command-line argument strings.
-/// @return 0 on success, 84 on error.
+static void printHelp() {
+    std::cout << "USAGE: ./raytracer [OPTIONS] <scene_file>\n"
+              << "\tscene_file\tpath to a .cfg scene file\n"
+              << "OPTIONS:\n"
+              << "\t--gui\t\tdisplay live rendering window (SFML)\n"
+              << "\t--help, -h\tshow this help\n";
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cerr << "Error: missing scene file. Use --help for usage.\n";
         return 84;
     }
-    if (argc > 2) {
-        std::cerr << "Error: too many arguments. Expected exactly one scene file.\n";
-        return 84;
+
+    bool gui = false;
+    std::string scene;
+
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--help" || arg == "-h") {
+            printHelp();
+            return 0;
+        }
+        if (arg == "--gui")
+            gui = true;
+        else if (scene.empty())
+            scene = arg;
+        else {
+            std::cerr << "Error: too many arguments. Use --help for usage.\n";
+            return 84;
+        }
     }
-    std::string scene = argv[1];
-    if (scene == "--help" || scene == "-h") {
-        printHelp();
-        return 0;
+
+    if (scene.empty()) {
+        std::cerr << "Error: missing scene file. Use --help for usage.\n";
+        return 84;
     }
 
     PrimitiveFactory primitiveFact;
@@ -48,7 +70,7 @@ int main(int argc, char *argv[]) {
     pluginLoader.loadAll("./plugins", primitiveFact);
 
     std::string ext = std::filesystem::path(scene).extension().string();
-    auto loaderOpt  = loaderFact.create(ext);
+    auto loaderOpt = loaderFact.create(ext);
     if (!loaderOpt) {
         std::cerr << "Error: unsupported file format '" << ext << "'.\n";
         return 84;
@@ -63,8 +85,16 @@ int main(int argc, char *argv[]) {
         std::filesystem::create_directories(outputDir);
         std::string outputPath = (outputDir / (stem + ".ppm")).string();
 
+        if (gui)
+            std::signal(SIGINT, signalHandler);
+
         Renderer renderer;
-        renderer.render(ctx, outputPath);
+        renderer.render(ctx, outputPath, gui, &g_shouldStop);
+
+        if (g_shouldStop.load(std::memory_order_relaxed)) {
+            std::cout << "Interrupted. Partially rendered output written to " << outputPath << "\n";
+            return 0;
+        }
 
         std::cout << "Successfully created " << outputPath << "\n";
     } catch (const std::exception &e) {

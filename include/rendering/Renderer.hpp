@@ -7,6 +7,9 @@
 
 #ifndef RENDERER_HPP_
     #define RENDERER_HPP_
+    #include <atomic>
+    #include <string>
+    #include <vector>
     #include "Color.hpp"
     #include "SceneContext.hpp"
 
@@ -22,25 +25,32 @@ public:
     /// @brief Renders the scene.
     /// @param context Scene context containing all rendering information.
     /// @param outputPath Path for the output PPM file.
-    void render(const SceneContext &context, const std::string &outputPath);
+    /// @param display If true, opens an SFML window for live preview during rendering.
+    /// @param shouldStop If set, render tiles will be skipped when this flag is true.
+    void render(const SceneContext &context, const std::string &outputPath, bool display = false, const std::atomic<bool> *shouldStop = nullptr);
 
 #ifdef UNIT_TEST
     friend class RendererTestAccessor;
 #endif
 
 private:
+    struct RenderParams {
+        int width;
+        int height;
+        int samples;
+        std::string aaType;
+        double threshold;
+        int nbAORays;
+    };
+
+    void renderTiles(const SceneContext &context, std::vector<Color> &pixelBuffer, const RenderParams &params, const std::atomic<bool> *shouldStop) const;
+    void writePPM(const std::string &outputPath, const std::vector<Color> &pixelBuffer, int width, int height) const;
+    void displayLoop(std::vector<Color> &pixelBuffer, const RenderParams &params, const SceneContext &context, const std::atomic<bool> *externalStop) const;
+
     /// @brief Traces a ray into the scene.
-    /// @param ray The ray to trace.
-    /// @param scene The scene to trace against.
-    /// @param depth Current recursion depth.
-    /// @param nbAORays Number of ambient occlusion rays.
-    /// @return Color result from tracing the ray.
     Color traceRay(const Ray &ray, const Scene &scene, int depth, int nbAORays) const;
 
     /// @brief Finds the closest hit along a ray.
-    /// @param ray The ray to test.
-    /// @param scene The scene to test against.
-    /// @return Optional HitRecord of closest intersection.
     static std::optional<HitRecord> closestHit(const Ray &ray, const Scene &scene);
 };
 

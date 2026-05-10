@@ -13,7 +13,10 @@
 #include <vector>
 #include <cstdint>
 #include <algorithm>
+#include <thread>
+#include <atomic>
 #include <omp.h>
+#include <SFML/Graphics.hpp>
 #include "Renderer.hpp"
 #include "IMaterial.hpp"
 #include "ScatterResult.hpp"
@@ -61,28 +64,27 @@ static double diffColor(const Color &c1, const Color &c2) {
     return std::max({std::abs(c1.x - c2.x), std::abs(c1.y - c2.y), std::abs(c1.z - c2.z)});
 }
 
-void Renderer::render(const SceneContext &context, const std::string &outputPath) {
-    if (!context.camera)
-        throw std::runtime_error("No camera in scene context");
+static bool shouldStopCheck(const std::atomic<bool> *shouldStop) {
+    return shouldStop && shouldStop->load(std::memory_order_relaxed);
+}
+
+void Renderer::renderTiles(const SceneContext &context, std::vector<Color> &pixelBuffer,
+    const RenderParams &params, const std::atomic<bool> *shouldStop) const {
     const Camera &cam = *context.camera;
-    int width = cam.getWidth();
-    int height = cam.getHeight();
-
-    int samples = (context.antialiasing) ? context.antialiasing->samples : 1;
-    std::string aaType = (context.antialiasing) ? context.antialiasing->type : "uniform";
-    double threshold = (context.antialiasing) ? context.antialiasing->threshold : 0.0;
-    int nbAORays = (context.nbAORays) ? *context.nbAORays : 16;
-
-    std::vector<Color> pixelBuffer(width * height);
-
-    context.scene.bvh();
+    int width = params.width;
+    int height = params.height;
+    int samples = params.samples;
+    const std::string &aaType = params.aaType;
+    double threshold = params.threshold;
+    int nbAORays = params.nbAORays;
 
     if (samples == 1 || aaType == "adaptive") {
         int tileHeight = (height + TILE_SIZE - 1) / TILE_SIZE;
         int tileWidth = (width + TILE_SIZE - 1) / TILE_SIZE;
-#pragma omp parallel for schedule(dynamic, 1)
+        #pragma omp parallel for schedule(dynamic, 1)
         for (int ty=0; ty<tileHeight; ty++) {
             for (int tx=0; tx<tileWidth; tx++) {
+                if (shouldStopCheck(shouldStop)) continue;
                 int yStart = ty * TILE_SIZE;
                 int xStart = tx * TILE_SIZE;
                 int yEnd = std::min(yStart + TILE_SIZE, height);
@@ -97,9 +99,11 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
         }
     }
 
+    if (shouldStopCheck(shouldStop)) return;
+
     if (aaType == "adaptive" && samples > 1) {
         std::vector<bool> needRefine(width * height, false);
-#pragma omp parallel for schedule(dynamic, 4)
+        #pragma omp parallel for schedule(dynamic, 4)
         for (int y=0; y<height; y++) {
             for (int x=0; x<width; x++) {
                 const Color &currentColor = pixelBuffer[y * width + x];
@@ -126,11 +130,14 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
             }
         }
 
+        if (shouldStopCheck(shouldStop)) return;
+
         int tileHeight = (height + TILE_SIZE - 1) / TILE_SIZE;
         int tileWidth = (width + TILE_SIZE - 1) / TILE_SIZE;
-#pragma omp parallel for schedule(dynamic, 1)
+        #pragma omp parallel for schedule(dynamic, 1)
         for (int ty=0; ty<tileHeight; ty++) {
             for (int tx=0; tx<tileWidth; tx++) {
+                if (shouldStopCheck(shouldStop)) continue;
                 int yStart = ty * TILE_SIZE;
                 int xStart = tx * TILE_SIZE;
                 int yEnd = std::min(yStart + TILE_SIZE, height);
@@ -157,9 +164,10 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
     } else if (samples > 1) {
         int tileHeight = (height + TILE_SIZE - 1) / TILE_SIZE;
         int tileWidth = (width + TILE_SIZE - 1) / TILE_SIZE;
-#pragma omp parallel for schedule(dynamic, 1)
+        #pragma omp parallel for schedule(dynamic, 1)
         for (int ty=0; ty<tileHeight; ty++) {
             for (int tx=0; tx<tileWidth; tx++) {
+                if (shouldStopCheck(shouldStop)) continue;
                 int yStart = ty * TILE_SIZE;
                 int xStart = tx * TILE_SIZE;
                 int yEnd = std::min(yStart + TILE_SIZE, height);
@@ -181,7 +189,9 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
             }
         }
     }
+}
 
+void Renderer::writePPM(const std::string &outputPath, const std::vector<Color> &pixelBuffer, int width, int height) const {
     std::ofstream outFile(outputPath, std::ios::binary);
     if (!outFile)
         throw std::runtime_error("Error: cannot open output file '" + outputPath + "'");
@@ -203,6 +213,87 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
     outFile.close();
     if (outFile.fail())
         throw std::runtime_error("Write error on output file: " + outputPath);
+}
+
+void Renderer::displayLoop(std::vector<Color> &pixelBuffer, const RenderParams &params,
+    const SceneContext &context, const std::atomic<bool> *externalStop) const {
+    int width = params.width;
+    int height = params.height;
+    std::atomic<bool> localStop{false};
+    std::atomic<bool> done{false};
+
+    std::thread renderThread([&]() {
+        renderTiles(context, pixelBuffer, params, &localStop);
+        done.store(true, std::memory_order_release);
+    });
+
+    sf::Texture texture;
+    texture.create(width, height);
+    sf::Sprite sprite(texture);
+
+    sf::RenderWindow window(sf::VideoMode(width, height), "Raytracer", sf::Style::Close);
+    window.setFramerateLimit(30);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                localStop.store(true, std::memory_order_relaxed);
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
+                localStop.store(true, std::memory_order_relaxed);
+        }
+
+        if (externalStop && externalStop->load(std::memory_order_relaxed))
+            localStop.store(true, std::memory_order_relaxed);
+
+        if (localStop.load(std::memory_order_relaxed))
+            window.close();
+
+        std::vector<uint8_t> rgbaData(width * height * 4);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                const Color &pixelColor = pixelBuffer[y * width + x];
+                int idx = (y * width + x) * 4;
+                rgbaData[idx] = static_cast<uint8_t>(toPPMByte(pixelColor.x));
+                rgbaData[idx + 1] = static_cast<uint8_t>(toPPMByte(pixelColor.y));
+                rgbaData[idx + 2] = static_cast<uint8_t>(toPPMByte(pixelColor.z));
+                rgbaData[idx + 3] = 255;
+            }
+        }
+        texture.update(rgbaData.data());
+
+        window.clear();
+        window.draw(sprite);
+        window.display();
+    }
+
+    renderThread.join();
+}
+
+void Renderer::render(const SceneContext &context, const std::string &outputPath,
+    bool display, const std::atomic<bool> *shouldStop) {
+    if (!context.camera)
+        throw std::runtime_error("No camera in scene context");
+    const Camera &cam = *context.camera;
+
+    RenderParams params;
+    params.width = cam.getWidth();
+    params.height = cam.getHeight();
+    params.samples = (context.antialiasing) ? context.antialiasing->samples : 1;
+    params.aaType = (context.antialiasing) ? context.antialiasing->type : "uniform";
+    params.threshold = (context.antialiasing) ? context.antialiasing->threshold : 0.0;
+    params.nbAORays = (context.nbAORays) ? *context.nbAORays : 16;
+
+    std::vector<Color> pixelBuffer(params.width * params.height);
+
+    context.scene.bvh();
+
+    if (display)
+        displayLoop(pixelBuffer, params, context, shouldStop);
+    else
+        renderTiles(context, pixelBuffer, params, shouldStop);
+
+    writePPM(outputPath, pixelBuffer, params.width, params.height);
 }
 
 Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth, int nbAORays) const {
