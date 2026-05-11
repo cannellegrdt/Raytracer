@@ -47,6 +47,49 @@ static const std::unordered_map<std::string, std::vector<std::string>> kPrimFiel
     {"mobius", {"x", "y", "z", "R", "w"}},
 };
 
+static void applyTransformations(PrimitiveBuilder &builder, const libconfig::Setting &elem) {
+    if (elem.exists("transformation_matrix")) {
+        const libconfig::Setting &tm = elem["transformation_matrix"];
+        Mat4 matrix{};
+        for (int row = 0; row < 4; row++)
+            for (int col = 0; col < 4; col++)
+                matrix.m[row][col] = ConfigUtils::toDouble(tm[row][col]);
+        builder.setTransformMatrix(matrix);
+    }
+    if (elem.exists("translation")) {
+        const libconfig::Setting &t = elem["translation"];
+        builder.setTranslation({
+            ConfigUtils::toDouble(t["x"]),
+            ConfigUtils::toDouble(t["y"]),
+            ConfigUtils::toDouble(t["z"])
+        });
+    }
+    if (elem.exists("rotation")) {
+        const libconfig::Setting &r = elem["rotation"];
+        builder.setRotation({
+            ConfigUtils::toDouble(r["x"]),
+            ConfigUtils::toDouble(r["y"]),
+            ConfigUtils::toDouble(r["z"])
+        });
+    }
+    if (elem.exists("shear")) {
+        const libconfig::Setting &sh = elem["shear"];
+        builder.setShear({
+            ConfigUtils::toDouble(sh["sxy"]), ConfigUtils::toDouble(sh["sxz"]),
+            ConfigUtils::toDouble(sh["syx"]), ConfigUtils::toDouble(sh["syz"]),
+            ConfigUtils::toDouble(sh["szx"]), ConfigUtils::toDouble(sh["szy"])
+        });
+    }
+    if (elem.exists("scale")) {
+        const libconfig::Setting &s = elem["scale"];
+        builder.setScale({
+            ConfigUtils::toDouble(s["x"]),
+            ConfigUtils::toDouble(s["y"]),
+            ConfigUtils::toDouble(s["z"])
+        });
+    }
+}
+
 std::vector<PrimitivePtr> PrimitivesParser::parse(const libconfig::Setting &primBlock, PrimitiveBuilder &builder) {
     std::vector<PrimitivePtr> result;
 
@@ -85,46 +128,7 @@ std::vector<PrimitivePtr> PrimitivesParser::parse(const libconfig::Setting &prim
 
                 builder.setType("obj").setFile(filePath).setMaterial(material);
 
-                if (elem.exists("transformation_matrix")) {
-                    const libconfig::Setting &tm = elem["transformation_matrix"];
-                    Mat4 matrix{};
-                    for (int row = 0; row < 4; row++)
-                        for (int col = 0; col < 4; col++)
-                            matrix.m[row][col] = ConfigUtils::toDouble(tm[row][col]);
-                    builder.setTransformMatrix(matrix);
-                }
-                if (elem.exists("translation")) {
-                    const libconfig::Setting &t = elem["translation"];
-                    builder.setTranslation({
-                        ConfigUtils::toDouble(t["x"]),
-                        ConfigUtils::toDouble(t["y"]),
-                        ConfigUtils::toDouble(t["z"])
-                    });
-                }
-                if (elem.exists("rotation")) {
-                    const libconfig::Setting &r = elem["rotation"];
-                    builder.setRotation({
-                        ConfigUtils::toDouble(r["x"]),
-                        ConfigUtils::toDouble(r["y"]),
-                        ConfigUtils::toDouble(r["z"])
-                    });
-                }
-                if (elem.exists("shear")) {
-                    const libconfig::Setting &sh = elem["shear"];
-                    builder.setShear({
-                        ConfigUtils::toDouble(sh["sxy"]), ConfigUtils::toDouble(sh["sxz"]),
-                        ConfigUtils::toDouble(sh["syx"]), ConfigUtils::toDouble(sh["syz"]),
-                        ConfigUtils::toDouble(sh["szx"]), ConfigUtils::toDouble(sh["szy"])
-                    });
-                }
-                if (elem.exists("scale")) {
-                    const libconfig::Setting &s = elem["scale"];
-                    builder.setScale({
-                        ConfigUtils::toDouble(s["x"]),
-                        ConfigUtils::toDouble(s["y"]),
-                        ConfigUtils::toDouble(s["z"])
-                    });
-                }
+                applyTransformations(builder, elem);
 
                 result.push_back(builder.build());
                 builder.reset();
@@ -161,46 +165,7 @@ std::vector<PrimitivePtr> PrimitivesParser::parse(const libconfig::Setting &prim
 
             builder.setType(factoryKey).setParams(params).setMaterial(material);
 
-            if (elem.exists("transformation_matrix")) {
-                const libconfig::Setting &tm = elem["transformation_matrix"];
-                Mat4 matrix{};
-                for (int row = 0; row < 4; row++)
-                    for (int col = 0; col < 4; col++)
-                        matrix.m[row][col] = ConfigUtils::toDouble(tm[row][col]);
-                builder.setTransformMatrix(matrix);
-            }
-            if (elem.exists("translation")) {
-                const libconfig::Setting &t = elem["translation"];
-                builder.setTranslation({
-                    ConfigUtils::toDouble(t["x"]),
-                    ConfigUtils::toDouble(t["y"]),
-                    ConfigUtils::toDouble(t["z"])
-                });
-            }
-            if (elem.exists("rotation")) {
-                const libconfig::Setting &r = elem["rotation"];
-                builder.setRotation({
-                    ConfigUtils::toDouble(r["x"]),
-                    ConfigUtils::toDouble(r["y"]),
-                    ConfigUtils::toDouble(r["z"])
-                });
-            }
-            if (elem.exists("shear")) {
-                const libconfig::Setting &sh = elem["shear"];
-                builder.setShear({
-                    ConfigUtils::toDouble(sh["sxy"]), ConfigUtils::toDouble(sh["sxz"]),
-                    ConfigUtils::toDouble(sh["syx"]), ConfigUtils::toDouble(sh["syz"]),
-                    ConfigUtils::toDouble(sh["szx"]), ConfigUtils::toDouble(sh["szy"])
-                });
-            }
-            if (elem.exists("scale")) {
-                const libconfig::Setting &s = elem["scale"];
-                builder.setScale({
-                    ConfigUtils::toDouble(s["x"]),
-                    ConfigUtils::toDouble(s["y"]),
-                    ConfigUtils::toDouble(s["z"])
-                });
-            }
+            applyTransformations(builder, elem);
 
             result.push_back(builder.build());
             builder.reset();
