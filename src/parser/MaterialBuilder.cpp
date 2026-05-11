@@ -30,7 +30,7 @@ std::shared_ptr<IMaterial> MaterialBuilder::build(const libconfig::Setting &mat)
         Color colorB;
         double scale = 1.0;
         double turbulence = 1.0;
-        int octaves = 1.0;
+        int octaves = 1;
         if (mat.exists("colorA")) {
             colorA = {
                 ConfigUtils::toDouble(mat["colorA"]["r"]),
@@ -50,7 +50,7 @@ std::shared_ptr<IMaterial> MaterialBuilder::build(const libconfig::Setting &mat)
         if (mat.exists("turbulence"))
             turbulence = ConfigUtils::toDouble(mat["turbulence"]);
         if (mat.exists("octaves"))
-            octaves = ConfigUtils::toDouble(mat["octaves"]);
+            octaves = static_cast<int>(ConfigUtils::toDouble(mat["octaves"]));
         
         if (type == "chessboard")
             return std::make_shared<ProceduralCheckerboard>(colorA, colorB, scale);
