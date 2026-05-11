@@ -10,6 +10,7 @@
     #define SCENE_HPP_
     #include <vector>
     #include <memory>
+    #include <mutex>
     #include "Factory.hpp"
     #include "ILight.hpp"
     #include "Color.hpp"
@@ -52,6 +53,7 @@ private:
     std::vector<PrimitivePtr> _primitives;
     std::vector<std::unique_ptr<ILight>> _lights;
     Color _backgroundColor{0, 0, 0};
+    std::unique_ptr<std::once_flag> _bvhFlag;
     mutable std::unique_ptr<BVH> _bvh;
 };
 

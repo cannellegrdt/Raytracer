@@ -18,18 +18,10 @@
 #include "AABB.hpp"
 #include "IMaterial.hpp"
 #include "IPrimitive.hpp"
+#include "SAHBuilder.hpp"
 #include "Vec3.hpp"
 
 namespace {
-
-static constexpr int NUM_BINS = 12;
-static constexpr int MAX_LEAF_SIZE = 4;
-
-static double surfaceArea(const AABB &box) {
-    Vec3 d = box.max - box.min;
-    if (d.x < 0.0 || d.y < 0.0 || d.z < 0.0) return 0.0;
-    return 2.0 * (d.x * d.y + d.y * d.z + d.z * d.x);
-}
 
 struct MeshFace {
     Vec3 v0, v1, v2;
@@ -43,8 +35,8 @@ struct MeshNode {
     AABB box;
     int left = -1;
     int right = -1;
-    int faceBegin = 0;
-    int faceEnd = 0;
+    int begin = 0;
+    int end = 0;
 };
 
 void parseFaceToken(const std::string &tok, int &vi, int &ni) {
@@ -62,7 +54,10 @@ void parseFaceToken(const std::string &tok, int &vi, int &ni) {
 }
 
 int resolveIdx(int idx, int size) {
-    return idx > 0 ? idx - 1 : size + idx;
+    if (size <= 0) return -1;
+    int resolved = idx > 0 ? idx - 1 : size + idx;
+    if (resolved < 0 || resolved >= size) return -1;
+    return resolved;
 }
 
 } // namespace
@@ -152,7 +147,11 @@ private:
         _faceIdx.resize(_faces.size());
         std::iota(_faceIdx.begin(), _faceIdx.end(), 0);
         _nodes.reserve(2 * _faces.size());
-        buildRecursive(0, static_cast<int>(_faces.size()));
+        SAHBuilder<MeshNode> builder(
+            _faceIdx, _nodes,
+            [this](int idx) -> AABB { return _faces[idx].bbox; },
+            [this](int idx) -> Vec3 { return _faces[idx].bbox.centroid(); });
+        builder.build(0, static_cast<int>(_faces.size()));
     }
 
     void addFace(const std::string &t0, const std::string &t1, const std::string &t2,
@@ -162,20 +161,36 @@ private:
         parseFaceToken(t1, vi[1], ni[1]);
         parseFaceToken(t2, vi[2], ni[2]);
 
+        int vri[3];
+        vri[0] = resolveIdx(vi[0], static_cast<int>(verts.size()));
+        vri[1] = resolveIdx(vi[1], static_cast<int>(verts.size()));
+        vri[2] = resolveIdx(vi[2], static_cast<int>(verts.size()));
+        if (vri[0] < 0 || vri[1] < 0 || vri[2] < 0)
+            return;
+
         MeshFace f;
-        f.v0 = verts[resolveIdx(vi[0], static_cast<int>(verts.size()))];
-        f.v1 = verts[resolveIdx(vi[1], static_cast<int>(verts.size()))];
-        f.v2 = verts[resolveIdx(vi[2], static_cast<int>(verts.size()))];
+        f.v0 = verts[vri[0]];
+        f.v1 = verts[vri[1]];
+        f.v2 = verts[vri[2]];
         f.edge1 = f.v1 - f.v0;
         f.edge2 = f.v2 - f.v0;
         f.faceNormal = normalize(cross(f.edge1, f.edge2));
 
         bool hasNormals = ni[0] != 0 && ni[1] != 0 && ni[2] != 0 && !norms.empty();
         if (hasNormals) {
-            f.n0 = normalize(norms[resolveIdx(ni[0], static_cast<int>(norms.size()))]);
-            f.n1 = normalize(norms[resolveIdx(ni[1], static_cast<int>(norms.size()))]);
-            f.n2 = normalize(norms[resolveIdx(ni[2], static_cast<int>(norms.size()))]);
-        } else
+            int nri[3];
+            nri[0] = resolveIdx(ni[0], static_cast<int>(norms.size()));
+            nri[1] = resolveIdx(ni[1], static_cast<int>(norms.size()));
+            nri[2] = resolveIdx(ni[2], static_cast<int>(norms.size()));
+            if (nri[0] < 0 || nri[1] < 0 || nri[2] < 0)
+                hasNormals = false;
+            else {
+                f.n0 = normalize(norms[nri[0]]);
+                f.n1 = normalize(norms[nri[1]]);
+                f.n2 = normalize(norms[nri[2]]);
+            }
+        }
+        if (!hasNormals)
             f.n0 = f.n1 = f.n2 = f.faceNormal;
 
         constexpr double pad = 1e-4;
@@ -191,141 +206,6 @@ private:
         _faces.push_back(f);
     }
 
-    int buildRecursive(int begin, int end) {
-        int nodeIdx = static_cast<int>(_nodes.size());
-        _nodes.push_back({});
-
-        AABB box = AABB::empty();
-        for (int i=begin; i<end; i++)
-            box = AABB::merge(box, _faces[_faceIdx[i]].bbox);
-        _nodes[nodeIdx].box = box;
-        _nodes[nodeIdx].faceBegin = begin;
-        _nodes[nodeIdx].faceEnd = end;
-
-        if (end - begin <= MAX_LEAF_SIZE)
-            return nodeIdx;
-
-        struct Bin {
-            AABB box = AABB::empty();
-            int count = 0;
-        };
-
-        const double parentSA = surfaceArea(box);
-        double bestCost = static_cast<double>(end - begin);
-        int bestAxis = -1;
-        int bestBin = -1;
-        double bestCMin = 0.0, bestCMax = 0.0;
-
-        if (parentSA > 0.0) {
-            for (int axis = 0; axis < 3; axis++) {
-                double cMin = std::numeric_limits<double>::infinity();
-                double cMax = -std::numeric_limits<double>::infinity();
-                for (int i = begin; i < end; i++) {
-                    Vec3 c = _faces[_faceIdx[i]].bbox.centroid();
-                    double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
-                    if (coord < cMin)
-                        cMin = coord;
-                    if (coord > cMax)
-                        cMax = coord;
-                }
-                if (cMax <= cMin) continue;
-
-                Bin bins[NUM_BINS];
-                double invRange = static_cast<double>(NUM_BINS) / (cMax - cMin);
-                for (int i = begin; i < end; i++) {
-                    Vec3 c = _faces[_faceIdx[i]].bbox.centroid();
-                    double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
-                    int b = static_cast<int>((coord - cMin) * invRange);
-                    if (b >= NUM_BINS)
-                        b = NUM_BINS - 1;
-                    bins[b].box = AABB::merge(bins[b].box, _faces[_faceIdx[i]].bbox);
-                    bins[b].count++;
-                }
-
-                AABB leftBox[NUM_BINS - 1];
-                int leftCnt[NUM_BINS - 1];
-                {
-                    AABB lb = AABB::empty(); int lc = 0;
-                    for (int b = 0; b < NUM_BINS - 1; b++) {
-                        lb = AABB::merge(lb, bins[b].box);
-                        lc += bins[b].count;
-                        leftBox[b] = lb;
-                        leftCnt[b] = lc;
-                    }
-                }
-
-                AABB rightBox[NUM_BINS - 1];
-                int rightCnt[NUM_BINS - 1];
-                {
-                    AABB rb = AABB::empty(); int rc = 0;
-                    for (int b = NUM_BINS - 1; b >= 1; b--) {
-                        rb = AABB::merge(rb, bins[b].box);
-                        rc += bins[b].count;
-                        rightBox[b - 1] = rb;
-                        rightCnt[b - 1] = rc;
-                    }
-                }
-
-                for (int b = 0; b < NUM_BINS - 1; b++) {
-                    if (leftCnt[b] == 0 || rightCnt[b] == 0) continue;
-                    double cost = (surfaceArea(leftBox[b]) * leftCnt[b] + surfaceArea(rightBox[b]) * rightCnt[b]) / parentSA;
-                    if (cost < bestCost) {
-                        bestCost = cost;
-                        bestAxis = axis;
-                        bestBin = b;
-                        bestCMin = cMin;
-                        bestCMax = cMax;
-                    }
-                }
-            }
-        }
-
-        int midPos;
-
-        if (bestAxis != -1) {
-            double invRange = static_cast<double>(NUM_BINS) / (bestCMax - bestCMin);
-            auto midIt = std::partition(
-                _faceIdx.begin() + begin,
-                _faceIdx.begin() + end,
-                [&](int idx) {
-                    Vec3 c = _faces[idx].bbox.centroid();
-                    double coord = (bestAxis == 0) ? c.x : (bestAxis == 1 ? c.y : c.z);
-                    int b = static_cast<int>((coord - bestCMin) * invRange);
-                    if (b >= NUM_BINS) b = NUM_BINS - 1;
-                    return b <= bestBin;
-                }
-            );
-            midPos = static_cast<int>(midIt - _faceIdx.begin());
-        } else {
-            Vec3 ext = box.max - box.min;
-            int axis = 0;
-            if (ext.y > ext.x) axis = 1;
-            if (ext.z > (axis == 0 ? ext.x : ext.y)) axis = 2;
-            double mid = axis == 0 ? (box.min.x + box.max.x) * 0.5
-                       : axis == 1 ? (box.min.y + box.max.y) * 0.5
-                       : (box.min.z + box.max.z) * 0.5;
-            auto midIt = std::partition(
-                _faceIdx.begin() + begin,
-                _faceIdx.begin() + end,
-                [&](int idx) {
-                    Vec3 c = _faces[idx].bbox.centroid();
-                    double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
-                    return coord < mid;
-                }
-            );
-            midPos = static_cast<int>(midIt - _faceIdx.begin());
-        }
-
-        if (midPos == begin || midPos == end)
-            midPos = begin + (end - begin) / 2;
-
-        int leftIdx = buildRecursive(begin, midPos);
-        int rightIdx = buildRecursive(midPos, end);
-        _nodes[nodeIdx].left = leftIdx;
-        _nodes[nodeIdx].right = rightIdx;
-        return nodeIdx;
-    }
-
     std::optional<HitRecord> traverseNode(int nodeIdx, const Ray &ray, double tMin, double &tMax) const {
         double localMin = tMin;
         double localMax = tMax;
@@ -336,7 +216,7 @@ private:
 
         if (node.left == -1) {
             std::optional<HitRecord> closest;
-            for (int i=node.faceBegin; i<node.faceEnd; i++) {
+            for (int i=node.begin; i<node.end; i++) {
                 auto hit = intersectFace(_faces[_faceIdx[i]], ray);
                 if (hit && hit->t > tMin && hit->t <= tMax) {
                     tMax = hit->t;

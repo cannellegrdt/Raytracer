@@ -9,27 +9,23 @@
 
 #include <algorithm>
 #include <limits>
-#include <stack>
 #include <omp.h>
 #include "BVH.hpp"
 #include "IPrimitive.hpp"
+#include "SAHBuilder.hpp"
+#include "utils/Common.hpp"
 
-static constexpr int NUM_BINS     = 12;
-static constexpr int MAX_LEAF_SIZE = 4;
-
-static double surfaceArea(const AABB &box) {
-    Vec3 d = box.max - box.min;
-    if (d.x < 0.0 || d.y < 0.0 || d.z < 0.0) return 0.0;
-    return 2.0 * (d.x * d.y + d.y * d.z + d.z * d.x);
-}
+constexpr int MAX_DEPTH_TREE = 64;
 
 void BVH::build(const std::vector<PrimitivePtr> &primitives) {
     _nodes.clear();
     _primIndices.clear();
     _unbounded.clear();
 
+    std::vector<AABB> boxes(primitives.size());
     for (int i = 0; i < static_cast<int>(primitives.size()); i++) {
-        if (primitives[i]->boundingBox().isInfinite())
+        boxes[i] = primitives[i]->boundingBox();
+        if (boxes[i].isInfinite())
             _unbounded.push_back(i);
         else
             _primIndices.push_back(i);
@@ -37,145 +33,12 @@ void BVH::build(const std::vector<PrimitivePtr> &primitives) {
 
     if (!_primIndices.empty()) {
         _nodes.reserve(_primIndices.size() * 2);
-        buildRecursive(primitives, 0, static_cast<int>(_primIndices.size()));
+        SAHBuilder<Node> builder(
+            _primIndices, _nodes,
+            [&boxes](int idx) -> AABB { return boxes[idx]; },
+            [&boxes](int idx) -> Vec3  { return boxes[idx].centroid(); });
+        builder.build(0, static_cast<int>(_primIndices.size()));
     }
-}
-
-int BVH::buildRecursive(const std::vector<PrimitivePtr> &prims, int begin, int end) {
-    int nodeIdx = static_cast<int>(_nodes.size());
-    _nodes.push_back(Node{});
-
-    AABB box = AABB::empty();
-    for (int i = begin; i < end; i++)
-        box = AABB::merge(box, prims[_primIndices[i]]->boundingBox());
-    _nodes[nodeIdx].box = box;
-
-    int count = end - begin;
-    if (count <= MAX_LEAF_SIZE) {
-        _nodes[nodeIdx].primBegin = begin;
-        _nodes[nodeIdx].primEnd   = end;
-        return nodeIdx;
-    }
-
-    struct Bin { AABB box = AABB::empty(); int count = 0; };
-
-    const double parentSA = surfaceArea(box);
-    double bestCost = static_cast<double>(count);
-    int bestAxis = -1;
-    int bestBin = -1;
-    double bestCMin = 0.0, bestCMax = 0.0;
-
-    if (parentSA > 0.0) {
-        for (int axis = 0; axis < 3; axis++) {
-            double cMin =  std::numeric_limits<double>::infinity();
-            double cMax = -std::numeric_limits<double>::infinity();
-            for (int i = begin; i < end; i++) {
-                Vec3 c = prims[_primIndices[i]]->boundingBox().centroid();
-                double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
-                if (coord < cMin)
-                    cMin = coord;
-                if (coord > cMax)
-                    cMax = coord;
-            }
-            if (cMax <= cMin) continue;
-
-            Bin bins[NUM_BINS];
-            double invRange = static_cast<double>(NUM_BINS) / (cMax - cMin);
-            for (int i = begin; i < end; i++) {
-                Vec3 c = prims[_primIndices[i]]->boundingBox().centroid();
-                double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
-                int b = static_cast<int>((coord - cMin) * invRange);
-                if (b >= NUM_BINS)
-                    b = NUM_BINS - 1;
-                bins[b].box = AABB::merge(bins[b].box, prims[_primIndices[i]]->boundingBox());
-                bins[b].count++;
-            }
-
-            AABB leftBox[NUM_BINS - 1];
-            int leftCnt[NUM_BINS - 1];
-            {
-                AABB lb = AABB::empty(); int lc = 0;
-                for (int b = 0; b < NUM_BINS - 1; b++) {
-                    lb = AABB::merge(lb, bins[b].box);
-                    lc += bins[b].count;
-                    leftBox[b] = lb;
-                    leftCnt[b] = lc;
-                }
-            }
-
-            AABB rightBox[NUM_BINS - 1];
-            int rightCnt[NUM_BINS - 1];
-            {
-                AABB rb = AABB::empty(); int rc = 0;
-                for (int b = NUM_BINS - 1; b >= 1; b--) {
-                    rb = AABB::merge(rb, bins[b].box);
-                    rc += bins[b].count;
-                    rightBox[b - 1] = rb;
-                    rightCnt[b - 1] = rc;
-                }
-            }
-
-            for (int b = 0; b < NUM_BINS - 1; b++) {
-                if (leftCnt[b] == 0 || rightCnt[b] == 0) continue;
-                double cost = (surfaceArea(leftBox[b]) * leftCnt[b] + surfaceArea(rightBox[b]) * rightCnt[b]) / parentSA;
-                if (cost < bestCost) {
-                    bestCost = cost;
-                    bestAxis = axis;
-                    bestBin = b;
-                    bestCMin = cMin;
-                    bestCMax = cMax;
-                }
-            }
-        }
-    }
-
-    int midPos;
-
-    if (bestAxis != -1) {
-        double invRange = static_cast<double>(NUM_BINS) / (bestCMax - bestCMin);
-        auto midIt = std::partition(
-            _primIndices.begin() + begin,
-            _primIndices.begin() + end,
-            [&](int idx) {
-                Vec3 c = prims[idx]->boundingBox().centroid();
-                double coord = (bestAxis == 0) ? c.x : (bestAxis == 1 ? c.y : c.z);
-                int b = static_cast<int>((coord - bestCMin) * invRange);
-                if (b >= NUM_BINS) b = NUM_BINS - 1;
-                return b <= bestBin;
-            }
-        );
-        midPos = static_cast<int>(midIt - _primIndices.begin());
-    } else {
-        Vec3 ext = box.max - box.min;
-        int axis = 0;
-        if (ext.y > ext.x) axis = 1;
-        if (ext.z > (axis == 0 ? ext.x : ext.y)) axis = 2;
-        double mid = axis == 0 ? (box.min.x + box.max.x) * 0.5
-                   : axis == 1 ? (box.min.y + box.max.y) * 0.5
-                   : (box.min.z + box.max.z) * 0.5;
-        auto midIt = std::partition(
-            _primIndices.begin() + begin,
-            _primIndices.begin() + end,
-            [&](int idx) {
-                Vec3 c = prims[idx]->boundingBox().centroid();
-                double coord = (axis == 0) ? c.x : (axis == 1 ? c.y : c.z);
-                return coord < mid;
-            }
-        );
-        midPos = static_cast<int>(midIt - _primIndices.begin());
-    }
-
-    if (midPos == begin || midPos == end)
-        midPos = begin + count / 2;
-
-    int leftChild = buildRecursive(prims, begin, midPos);
-    int rightChild = buildRecursive(prims, midPos, end);
-    _nodes[nodeIdx].left = leftChild;
-    _nodes[nodeIdx].right = rightChild;
-    _nodes[nodeIdx].primBegin = -1;
-    _nodes[nodeIdx].primEnd = -1;
-
-    return nodeIdx;
 }
 
 std::optional<HitRecord> BVH::intersect(const Ray &ray, const std::vector<PrimitivePtr> &primitives) const {
@@ -203,13 +66,13 @@ std::optional<HitRecord> BVH::traverseNode(int nodeIdx, const Ray &ray, double t
     const std::vector<PrimitivePtr> &prims) const {
     std::optional<HitRecord> closest;
     double current_tMax = tMax;
-    std::stack<int> nodeStack;
-    nodeStack.push(nodeIdx);
 
-    while (!nodeStack.empty()) {
-        int currentNodeIdx = nodeStack.top();
-        nodeStack.pop();
-        const Node &node = _nodes[currentNodeIdx];
+    int stack[MAX_DEPTH_TREE];
+    int top = 0;
+    stack[top++] = nodeIdx;
+
+    while (top > 0) {
+        const Node &node = _nodes[stack[--top]];
 
         double localMin = tMin;
         double localMax = current_tMax;
@@ -217,7 +80,7 @@ std::optional<HitRecord> BVH::traverseNode(int nodeIdx, const Ray &ray, double t
             continue;
 
         if (node.left == -1) {
-            for (int i = node.primBegin; i < node.primEnd; i++) {
+            for (int i = node.begin; i < node.end; i++) {
                 auto hit = prims[_primIndices[i]]->intersect(ray);
                 if (hit && hit->t > tMin && hit->t < current_tMax) {
                     current_tMax = hit->t;
@@ -225,8 +88,8 @@ std::optional<HitRecord> BVH::traverseNode(int nodeIdx, const Ray &ray, double t
                 }
             }
         } else {
-            nodeStack.push(node.right);
-            nodeStack.push(node.left);
+            stack[top++] = node.right;
+            stack[top++] = node.left;
         }
     }
 

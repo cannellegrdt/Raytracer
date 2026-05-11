@@ -31,15 +31,13 @@ private:
         AABB box;
         int left{-1};
         int right{-1};
-        int primBegin{0};
-        int primEnd{0};
+        int begin{0};
+        int end{0};
     };
 
     std::vector<Node> _nodes;
     std::vector<int> _primIndices; ///< Permuted indices into primitives (bounded only).
     std::vector<int> _unbounded;   ///< Indices of infinite primitives (always tested).
-
-    int buildRecursive(const std::vector<PrimitivePtr> &prims, int begin, int end);
 
     std::optional<HitRecord> traverseNode(int nodeIdx, const Ray &ray, double tMin, double &tMax,
         const std::vector<PrimitivePtr> &prims) const;
