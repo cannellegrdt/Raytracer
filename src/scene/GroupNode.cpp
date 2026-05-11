@@ -7,6 +7,7 @@
 
 #include "GroupNode.hpp"
 #include "Mat3.hpp"
+#include "Common.hpp"
 #include <limits>
 
 constexpr int NB_CORNERS_AABB = 8;
@@ -67,7 +68,7 @@ std::optional<HitRecord> GroupNode::intersect(const Ray &ray) const {
 
     for (const auto &child : _children) {
         auto hit = child->intersect(localRay);
-        if (hit && hit->t > 0.0 && hit->t < tMax) {
+        if (hit && hit->t > epsilon && hit->t < tMax) {
             tMax = hit->t;
             closest = hit;
         }
