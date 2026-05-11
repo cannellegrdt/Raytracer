@@ -13,6 +13,7 @@
 #include <vector>
 #include <cstdint>
 #include "NormalMapMaterial.hpp"
+#include "Common.hpp"
 
 NormalMapMaterial::NormalMapMaterial(std::shared_ptr<IMaterial> baseMaterial, const std::string &normalMapPath)
     : _baseMaterial(std::move(baseMaterial)) {
