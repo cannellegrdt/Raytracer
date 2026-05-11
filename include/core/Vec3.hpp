@@ -9,7 +9,7 @@
     #define VEC3_HPP_
     #include <cmath>
     #include <stdexcept>
-    constexpr double epsilon = 1e-12;
+    #include "Common.hpp"
 
 /// @brief 3D vector with x, y, z components.
 struct Vec3 {

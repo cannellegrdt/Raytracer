@@ -11,7 +11,7 @@
     #include <cmath>
 
     /// @brief Global epsilon for floating-point comparisons.
-    constexpr double Epsilon = 1e-12;
+    constexpr double epsilon = 1e-12;
 
     /// @brief Ray bias offset to avoid self-intersection (shadow acne).
     constexpr double RayBias = 1e-4;
