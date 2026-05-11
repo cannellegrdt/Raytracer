@@ -235,6 +235,8 @@ void Renderer::displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &
     sf::RenderWindow window(sf::VideoMode(width, height), "Raytracer", sf::Style::Close);
     window.setFramerateLimit(30);
 
+    std::vector<uint8_t> rgbaData(width * height * 4, 0);
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -252,22 +254,22 @@ void Renderer::displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &
 
         bool updated = _frameReady.exchange(false, std::memory_order_acquire);
         if (updated) {
-            std::lock_guard<std::mutex> lock(_bufferMutex);
-            std::swap(frontBuffer, backBuffer);
-        }
-
-        std::vector<uint8_t> rgbaData(width * height * 4);
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                const Color &pixelColor = frontBuffer[y * width + x];
-                int idx = (y * width + x) * 4;
-                rgbaData[idx] = static_cast<uint8_t>(toPPMByte(pixelColor.x));
-                rgbaData[idx + 1] = static_cast<uint8_t>(toPPMByte(pixelColor.y));
-                rgbaData[idx + 2] = static_cast<uint8_t>(toPPMByte(pixelColor.z));
-                rgbaData[idx + 3] = 255;
+            {
+                std::lock_guard<std::mutex> lock(_bufferMutex);
+                std::swap(frontBuffer, backBuffer);
             }
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    const Color &pixelColor = frontBuffer[y * width + x];
+                    int i = (y * width + x) * 4;
+                    rgbaData[i] = static_cast<uint8_t>(toPPMByte(pixelColor.x));
+                    rgbaData[i + 1] = static_cast<uint8_t>(toPPMByte(pixelColor.y));
+                    rgbaData[i + 2] = static_cast<uint8_t>(toPPMByte(pixelColor.z));
+                    rgbaData[i + 3] = 255;
+                }
+            }
+            texture.update(rgbaData.data());
         }
-        texture.update(rgbaData.data());
 
         window.clear();
         window.draw(sprite);
