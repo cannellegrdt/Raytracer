@@ -63,7 +63,7 @@ private:
 
 template<typename T>
 DLLoader<T>::DLLoader(const std::string &libPath)
-    : _handle(dlopen(libPath.c_str(), RTLD_NOW | RTLD_LOCAL))
+    : _handle(dlopen(libPath.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
 {
     if (!_handle)
         throw std::runtime_error(dlerror());
