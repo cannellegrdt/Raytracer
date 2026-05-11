@@ -215,16 +215,17 @@ void Renderer::writePPM(const std::string &outputPath, const std::vector<Color> 
         throw std::runtime_error("Write error on output file: " + outputPath);
 }
 
-void Renderer::displayLoop(std::vector<Color> &pixelBuffer, const RenderParams &params,
-    const SceneContext &context, const std::atomic<bool> *externalStop) const {
+void Renderer::displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &backBuffer,
+    const RenderParams &params, const SceneContext &context, const std::atomic<bool> *externalStop) const {
     int width = params.width;
     int height = params.height;
     std::atomic<bool> localStop{false};
     std::atomic<bool> done{false};
 
     std::thread renderThread([&]() {
-        renderTiles(context, pixelBuffer, params, &localStop);
+        renderTiles(context, backBuffer, params, &localStop);
         done.store(true, std::memory_order_release);
+        _frameReady.store(true, std::memory_order_release);
     });
 
     sf::Texture texture;
@@ -249,10 +250,16 @@ void Renderer::displayLoop(std::vector<Color> &pixelBuffer, const RenderParams &
         if (localStop.load(std::memory_order_relaxed))
             window.close();
 
+        bool updated = _frameReady.exchange(false, std::memory_order_acquire);
+        if (updated) {
+            std::lock_guard<std::mutex> lock(_bufferMutex);
+            std::swap(frontBuffer, backBuffer);
+        }
+
         std::vector<uint8_t> rgbaData(width * height * 4);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                const Color &pixelColor = pixelBuffer[y * width + x];
+                const Color &pixelColor = frontBuffer[y * width + x];
                 int idx = (y * width + x) * 4;
                 rgbaData[idx] = static_cast<uint8_t>(toPPMByte(pixelColor.x));
                 rgbaData[idx + 1] = static_cast<uint8_t>(toPPMByte(pixelColor.y));
@@ -284,16 +291,17 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
     params.threshold = (context.antialiasing) ? context.antialiasing->threshold : 0.0;
     params.nbAORays = (context.nbAORays) ? *context.nbAORays : 16;
 
-    std::vector<Color> pixelBuffer(params.width * params.height);
+    std::vector<Color> frontBuffer(params.width * params.height);
+    std::vector<Color> backBuffer(params.width * params.height);
 
     context.scene.bvh();
 
     if (display)
-        displayLoop(pixelBuffer, params, context, shouldStop);
+        displayLoop(frontBuffer, backBuffer, params, context, shouldStop);
     else
-        renderTiles(context, pixelBuffer, params, shouldStop);
+        renderTiles(context, frontBuffer, params, shouldStop);
 
-    writePPM(outputPath, pixelBuffer, params.width, params.height);
+    writePPM(outputPath, frontBuffer, params.width, params.height);
 }
 
 Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth, int nbAORays) const {
@@ -301,6 +309,8 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth, int nbAO
     if (!hit)
         return scene.backgroundColor();
 
+    if (!hit->material)
+        return scene.backgroundColor();
     ScatterResult scattered = hit->material->scatter(ray, *hit);
 
     Vec3 effectiveNormal = (scattered.modifiedNormal.has_value()) ? *scattered.modifiedNormal : hit->normal;
@@ -334,6 +344,7 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth, int nbAO
             for (int si = 0; si < 8; si++) {
                 auto blocker = closestHit(sRay, scene);
                 if (!blocker || blocker->t >= remaining) break;
+                if (!blocker->material) { fullyBlocked = true; break; }
                 if (!blocker->material->isTransmissive()) { fullyBlocked = true; break; }
                 ScatterResult s = blocker->material->scatter(sRay, *blocker);
                 shadowFilter = shadowFilter * s.attenuation;

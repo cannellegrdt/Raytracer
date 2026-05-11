@@ -10,6 +10,7 @@
     #include <atomic>
     #include <string>
     #include <vector>
+    #include <mutex>
     #include "Color.hpp"
     #include "SceneContext.hpp"
 
@@ -27,7 +28,8 @@ public:
     /// @param outputPath Path for the output PPM file.
     /// @param display If true, opens an SFML window for live preview during rendering.
     /// @param shouldStop If set, render tiles will be skipped when this flag is true.
-    void render(const SceneContext &context, const std::string &outputPath, bool display = false, const std::atomic<bool> *shouldStop = nullptr);
+    void render(const SceneContext &context, const std::string &outputPath, bool display = false,
+        const std::atomic<bool> *shouldStop = nullptr);
 
 #ifdef UNIT_TEST
     friend class RendererTestAccessor;
@@ -43,15 +45,22 @@ private:
         int nbAORays;
     };
 
-    void renderTiles(const SceneContext &context, std::vector<Color> &pixelBuffer, const RenderParams &params, const std::atomic<bool> *shouldStop) const;
-    void writePPM(const std::string &outputPath, const std::vector<Color> &pixelBuffer, int width, int height) const;
-    void displayLoop(std::vector<Color> &pixelBuffer, const RenderParams &params, const SceneContext &context, const std::atomic<bool> *externalStop) const;
+    void renderTiles(const SceneContext &context, std::vector<Color> &pixelBuffer,
+        const RenderParams &params, const std::atomic<bool> *shouldStop) const;
+    void writePPM(const std::string &outputPath, const std::vector<Color> &pixelBuffer,
+        int width, int height) const;
+    void displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &backBuffer,
+        const RenderParams &params, const SceneContext &context,
+        const std::atomic<bool> *externalStop) const;
 
     /// @brief Traces a ray into the scene.
     Color traceRay(const Ray &ray, const Scene &scene, int depth, int nbAORays) const;
 
     /// @brief Finds the closest hit along a ray.
     static std::optional<HitRecord> closestHit(const Ray &ray, const Scene &scene);
+
+    mutable std::mutex _bufferMutex;
+    mutable std::atomic<bool> _frameReady{false};
 };
 
 #endif /* RENDERER_HPP_ */
