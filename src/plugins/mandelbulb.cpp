@@ -64,7 +64,8 @@ public:
                 Vec3 point = _center + p * _scale;
                 Vec3 normal = normalize(gradient(p));
                 double u = std::atan2(p.y, p.x) / (2.0 * M_PI) + 0.5;
-                double v = std::acos(p.z / length(p)) / M_PI;
+                double len = length(p);
+                double v = (len > 1e-10) ? std::acos(std::clamp(p.z / len, -1.0, 1.0)) / M_PI : 0.0;
                 Vec3 tangent = normalize(Vec3(-normal.y, normal.x, 0));
                 Vec3 bitangent = cross(normal, tangent);
 
@@ -129,7 +130,10 @@ private:
             if (radial > _bailout)
                 break;
 
-            double theta = std::acos(p.z / radial);
+            if (radial < 1e-10)
+                radial = 1e-10;
+
+            double theta = std::acos(std::clamp(p.z / radial, -1.0, 1.0));
             double phi = std::atan2(p.y, p.x);
             double pRotate = std::pow(radial, _power);
             theta *= _power;
@@ -142,6 +146,8 @@ private:
 
             derivate = derivate * _power * std::pow(radial, _power - 1.0) + 1.0;
         }
+        if (radial < 1e-10 || std::abs(derivate) < 1e-10)
+            return length(v);
         return 0.5 * std::log(radial) * radial / derivate;
     }
 
