@@ -6,8 +6,8 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <cmath>
-#include <vector>
 #include "IPrimitive.hpp"
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
@@ -79,9 +79,9 @@ public:
         double D = 4.0 * n * k - 8.0 * _majorRadius * _majorRadius * b;
         double E = k * k - 4.0 * _majorRadius * _majorRadius * c;
 
-        auto roots = solveQuartic(A, B, C, D, E);
+        auto [roots, nRoots] = solveQuartic(A, B, C, D, E);
 
-        if (roots.empty()) return std::nullopt;
+        if (nRoots == 0) return std::nullopt;
 
         double t = roots[0];
         Vec3 localPoint = transOrigin + transDir * t;
@@ -113,24 +113,24 @@ public:
     };
 
 private:
+    struct RootSet {
+        std::array<double, 4> vals{};
+        int count = 0;
+        void push(double v) { vals[count++] = v; }
+    };
+
     /// @brief Solves quartic equation a*x⁴ + b*x³ + c*x² + d*x + e = 0 for positive roots.
-    /// @param a Coefficient of x⁴ (must be non-zero).
-    /// @param b Coefficient of x³.
-    /// @param c Coefficient of x².
-    /// @param d Coefficient of x.
-    /// @param e Constant term.
-    /// @return Sorted vector of positive real roots (t > epsilon), empty if none.
-    std::vector<double> solveQuartic(double a, double b, double c, double d, double e) const {
-        std::vector<double> roots;
+    /// @return Stack-allocated RootSet (sorted, t > epsilon). No heap allocation.
+    RootSet solveQuartic(double a, double b, double c, double d, double e) const {
+        RootSet result;
 
         if (std::abs(a) < epsilon)
-            return roots;
+            return result;
 
         b /= a;
         c /= a;
         d /= a;
         e /= a;
-        a = 1.0;
 
         double shift = b / 4.0;
         double p = c - 3.0 * b * b / 8.0;
@@ -159,32 +159,32 @@ private:
 
         double alphaFirst = 2.0 * y - p;
         if (alphaFirst < epsilon)
-            return roots;
+            return result;
         double alpha = std::sqrt(alphaFirst);
-        double beta = (y - q / (2.0 * alpha));
-        double gamma = (y + q / (2.0 * alpha));
+        double beta = y - q / (2.0 * alpha);
+        double gamma = y + q / (2.0 * alpha);
 
+        std::array<double, 4> candidates{};
+        int nCand = 0;
         double disc1 = alpha * alpha - 4.0 * beta;
         if (disc1 >= 0.0) {
-            double sqrt_disc1 = sqrt(disc1);
-            roots.push_back(-alpha - sqrt_disc1 - shift);
-            roots.push_back(-alpha + sqrt_disc1 - shift);
-        } 
+            double sd1 = std::sqrt(disc1);
+            candidates[nCand++] = -alpha - sd1 - shift;
+            candidates[nCand++] = -alpha + sd1 - shift;
+        }
         double disc2 = alpha * alpha - 4.0 * gamma;
         if (disc2 >= 0.0) {
-            double sqrt_disc2 = sqrt(disc2);
-            roots.push_back(alpha - sqrt_disc2 - shift);
-            roots.push_back(alpha + sqrt_disc2 - shift);
+            double sd2 = std::sqrt(disc2);
+            candidates[nCand++] = alpha - sd2 - shift;
+            candidates[nCand++] = alpha + sd2 - shift;
         }
 
-        std::vector<double> valid_roots;
-        for (double t : roots) {
-            if (t > epsilon)
-                valid_roots.push_back(t);
-        }
-        std::sort(valid_roots.begin(), valid_roots.end());
-        
-        return valid_roots;
+        for (int i = 0; i < nCand; i++)
+            if (candidates[i] > epsilon)
+                result.push(candidates[i]);
+
+        std::sort(result.vals.begin(), result.vals.begin() + result.count);
+        return result;
     }
 
     Vec3 _center;                         ///< Center position of the torus
