@@ -7,12 +7,14 @@
 
 #include <libconfig.h++>
 #include <memory>
+#include <stdexcept>
 #include "LightsParser.hpp"
 #include "ConfigUtils.hpp"
 #include "Scene.hpp"
 #include "AmbientLight.hpp"
 #include "DirectionalLight.hpp"
 #include "PointLight.hpp"
+#include "Common.hpp"
 
 void LightsParser::parseAndAddLights(const libconfig::Setting &lights, Scene &scene) {
     int nbLights = lights.getLength();
@@ -42,6 +44,8 @@ void LightsParser::parseAndAddLights(const libconfig::Setting &lights, Scene &sc
                     ConfigUtils::toDouble(elem["direction"]["y"]),
                     ConfigUtils::toDouble(elem["direction"]["z"])
                 };
+                if (length(direction) < epsilon)
+                    throw std::invalid_argument("DirectionalLight direction cannot be null");
                 scene.addLight(std::make_unique<DirectionalLight>(direction, color, intensity));
             } else if (name == "point") {
                 Vec3 position{
