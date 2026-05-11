@@ -8,12 +8,11 @@
 #ifndef TYPE_HPP_
     #define TYPE_HPP_
     #include <memory>
-    #include <functional>
     #include "IPrimitive.hpp"
 
 /// @brief Unique pointer to IPrimitive with custom deleter.
 /// @details Used for polymorphic primitive ownership with proper cleanup.
-using PrimitivePtr = std::unique_ptr<IPrimitive, std::function<void(IPrimitive*)>>;
+using PrimitivePtr = std::unique_ptr<IPrimitive, void(*)(IPrimitive*)>;
 
 /// @brief Default deleter for primitive types.
 /// @tparam T Concrete primitive type.
