@@ -12,6 +12,7 @@
 #include <iostream>
 #include <vector>
 #include <cstdint>
+#include <cmath>
 
 TexturedMaterial::TexturedMaterial(const std::string &filePath) {
     try {
@@ -29,6 +30,9 @@ TexturedMaterial::TexturedMaterial(const std::string &filePath) {
 
 ScatterResult TexturedMaterial::scatter(const Ray &/*ray*/, const HitRecord &hit) const {
     if (_pixels.empty())
+        return ScatterResult{Color{1.0, 0.0, 1.0}, std::nullopt, std::nullopt};
+
+    if (std::isnan(hit.UV.first) || std::isnan(hit.UV.second))
         return ScatterResult{Color{1.0, 0.0, 1.0}, std::nullopt, std::nullopt};
 
     int px = static_cast<int>(hit.UV.first * _width) % _width;
