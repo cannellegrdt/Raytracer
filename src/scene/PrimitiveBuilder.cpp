@@ -105,7 +105,7 @@ PrimitivePtr PrimitiveBuilder::build() {
     if (_transformMatrix)
         primitive = PrimitivePtr(
             new TransformMatrixDecorator(std::move(primitive), _transformMatrix.value()),
-            &defaultDestroy<RotationDecorator>
+            &defaultDestroy<TransformMatrixDecorator>
         );
     
     return primitive;
