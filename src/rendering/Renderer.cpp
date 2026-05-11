@@ -215,7 +215,7 @@ void Renderer::writePPM(const std::string &outputPath, const std::vector<Color> 
         throw std::runtime_error("Write error on output file: " + outputPath);
 }
 
-void Renderer::displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &backBuffer,
+void Renderer::displayLoop(std::vector<Color> &pixelBuffer,
     const RenderParams &params, const SceneContext &context, const std::atomic<bool> *externalStop) const {
     int width = params.width;
     int height = params.height;
@@ -223,9 +223,8 @@ void Renderer::displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &
     std::atomic<bool> done{false};
 
     std::thread renderThread([&]() {
-        renderTiles(context, backBuffer, params, &localStop);
+        renderTiles(context, pixelBuffer, params, &localStop);
         done.store(true, std::memory_order_release);
-        _frameReady.store(true, std::memory_order_release);
     });
 
     sf::Texture texture;
@@ -234,8 +233,6 @@ void Renderer::displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &
 
     sf::RenderWindow window(sf::VideoMode(width, height), "Raytracer", sf::Style::Close);
     window.setFramerateLimit(30);
-
-    std::vector<uint8_t> rgbaData(width * height * 4, 0);
 
     while (window.isOpen()) {
         sf::Event event;
@@ -252,24 +249,18 @@ void Renderer::displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &
         if (localStop.load(std::memory_order_relaxed))
             window.close();
 
-        bool updated = _frameReady.exchange(false, std::memory_order_acquire);
-        if (updated) {
-            {
-                std::lock_guard<std::mutex> lock(_bufferMutex);
-                std::swap(frontBuffer, backBuffer);
+        std::vector<uint8_t> rgbaData(width * height * 4);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                const Color &pixelColor = pixelBuffer[y * width + x];
+                int idx = (y * width + x) * 4;
+                rgbaData[idx] = static_cast<uint8_t>(toPPMByte(pixelColor.x));
+                rgbaData[idx + 1] = static_cast<uint8_t>(toPPMByte(pixelColor.y));
+                rgbaData[idx + 2] = static_cast<uint8_t>(toPPMByte(pixelColor.z));
+                rgbaData[idx + 3] = 255;
             }
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    const Color &pixelColor = frontBuffer[y * width + x];
-                    int i = (y * width + x) * 4;
-                    rgbaData[i] = static_cast<uint8_t>(toPPMByte(pixelColor.x));
-                    rgbaData[i + 1] = static_cast<uint8_t>(toPPMByte(pixelColor.y));
-                    rgbaData[i + 2] = static_cast<uint8_t>(toPPMByte(pixelColor.z));
-                    rgbaData[i + 3] = 255;
-                }
-            }
-            texture.update(rgbaData.data());
         }
+        texture.update(rgbaData.data());
 
         window.clear();
         window.draw(sprite);
@@ -293,17 +284,16 @@ void Renderer::render(const SceneContext &context, const std::string &outputPath
     params.threshold = (context.antialiasing) ? context.antialiasing->threshold : 0.0;
     params.nbAORays = (context.nbAORays) ? *context.nbAORays : 16;
 
-    std::vector<Color> frontBuffer(params.width * params.height);
-    std::vector<Color> backBuffer(params.width * params.height);
+    std::vector<Color> pixelBuffer(params.width * params.height);
 
     context.scene.bvh();
 
     if (display)
-        displayLoop(frontBuffer, backBuffer, params, context, shouldStop);
+        displayLoop(pixelBuffer, params, context, shouldStop);
     else
-        renderTiles(context, frontBuffer, params, shouldStop);
+        renderTiles(context, pixelBuffer, params, shouldStop);
 
-    writePPM(outputPath, frontBuffer, params.width, params.height);
+    writePPM(outputPath, pixelBuffer, params.width, params.height);
 }
 
 Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth, int nbAORays) const {

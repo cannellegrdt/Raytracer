@@ -10,7 +10,6 @@
     #include <atomic>
     #include <string>
     #include <vector>
-    #include <mutex>
     #include "Color.hpp"
     #include "SceneContext.hpp"
 
@@ -49,7 +48,7 @@ private:
         const RenderParams &params, const std::atomic<bool> *shouldStop) const;
     void writePPM(const std::string &outputPath, const std::vector<Color> &pixelBuffer,
         int width, int height) const;
-    void displayLoop(std::vector<Color> &frontBuffer, std::vector<Color> &backBuffer,
+    void displayLoop(std::vector<Color> &pixelBuffer,
         const RenderParams &params, const SceneContext &context,
         const std::atomic<bool> *externalStop) const;
 
@@ -58,9 +57,6 @@ private:
 
     /// @brief Finds the closest hit along a ray.
     static std::optional<HitRecord> closestHit(const Ray &ray, const Scene &scene);
-
-    mutable std::mutex _bufferMutex;
-    mutable std::atomic<bool> _frameReady{false};
 };
 
 #endif /* RENDERER_HPP_ */
