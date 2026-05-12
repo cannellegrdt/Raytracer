@@ -5,6 +5,52 @@ Files are parsed by **libconfig++** and loaded by `LibconfigLoader`.
 
 ---
 
+## Quick start
+
+A minimal scene needs only `camera`, `primitives`, and `lights`:
+
+```cfg
+camera = {
+    resolution = { width = 800; height = 600; };
+    position = { x = 0.0; y = 1.0; z = -6.0; };
+    rotation = { x = 5.0; y = 0.0; z = 0.0; };
+    fieldOfView = 60.0;
+};
+
+primitives = {
+    spheres = (
+        { x = 0.0; y = 0.0; z = 3.0; r = 1.0;
+          material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; }; }
+    );
+};
+
+lights = {
+    ambient = ( { color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.15; } );
+    directional = ( { direction = { x = -1.0; y = -2.0; z = 1.0; }; color = { r = 1.0; g = 1.0; b = 1.0; }; intensity = 0.85; } );
+};
+```
+
+Add antialiasing and optional renderer settings:
+
+```cfg
+renderer = {
+    antialiasing = { samples = 4; type = "uniform"; };
+    nbAORays = 8;
+};
+```
+
+Add nested groups for scene graphs, and import other `.cfg` files:
+
+```cfg
+imports = (
+    { path = "scenes/sub.cfg"; translation = { x = 2.0; y = 0.0; z = 0.0; }; }
+);
+```
+
+See the [Complete example](#12-complete-example) section at the bottom for a fully annotated scene.
+
+---
+
 ## Table of contents
 
 1. [File extension & structure](#1-file-extension--structure)
@@ -98,6 +144,7 @@ primitives = {
     torus = ( ... );
     cubes = ( ... );
     tanglecubes = ( ... );
+    triangles = ( ... );
     mobius = ( ... );
     obj_meshes = ( ... );
     mandelbulbs = ( ... );
@@ -646,7 +693,6 @@ material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
 | `"chessboard"` | Procedural checkerboard pattern calculated from 3D hit position; no secondary rays |
 | `"marble"` | Procedural marble-like pattern using Perlin noise; `colorA`/`colorB` = vein colors, `scale` = sine frequency, `turbulence` = noise amplitude, `octaves` = detail level; no secondary rays |
 | `"normalmap"` | Uses a normal map texture to perturb surface normals for lighting; wraps a base material |
-| `"normalmap"` | Uses a normal map texture to perturb surface normals for lighting; wraps a base material |
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -659,9 +705,8 @@ material = { type = "flat"; color = { r = 1.0; g = 0.2; b = 0.2; }; };
 | `colorA` | Color | First color (only for `"chessboard"` and `"marble"`) |
 | `colorB` | Color | Second color (only for `"chessboard"` and `"marble"`) |
 | `scale` | double | Cell size for `"chessboard"` (> 0, default: 1.0); sine frequency for `"marble"` (> 0, default: 1.0) |
-| `turbulence` | double | Amplitude of the Perlin noise perturbation (only for `"marble"`; default: 5.0) |
-| `octaves` | int | Number of fractal noise octaves (only for `"marble"`; default: 6) |
-| `seed` | int | Random seed for the noise permutation table (only for `"marble"`; default: 0) |
+| `turbulence` | double | Amplitude of the Perlin noise perturbation (only for `"marble"`; default: 1.0) |
+| `octaves` | int | Number of fractal noise octaves (only for `"marble"`; default: 1) |
 
 ### Textured material
 
@@ -731,7 +776,6 @@ material = {
     scale = 3.0;
     turbulence = 5.0;
     octaves = 6;
-    seed = 42;
 };
 ```
 
@@ -740,9 +784,8 @@ material = {
 | `colorA` | Color | Base color of the marble (RGB in `[0.0, 1.0]`) |
 | `colorB` | Color | Vein color (RGB in `[0.0, 1.0]`) |
 | `scale` | double | Spatial frequency of the sine wave; higher = finer veins (> 0, default: 1.0) |
-| `turbulence` | double | Amplitude of the noise perturbation; higher = more chaotic veins (default: 5.0) |
-| `octaves` | int | Number of fractal noise octaves; higher = more surface detail, slower to compute (default: 6) |
-| `seed` | int | Random seed for the permutation table; different values produce different vein patterns (default: 0) |
+| `turbulence` | double | Amplitude of the noise perturbation; higher = more chaotic veins (default: 1.0) |
+| `octaves` | int | Number of fractal noise octaves; higher = more surface detail, slower to compute (default: 1) |
 
 **Note:** `scale` here controls the frequency of the sine wave along the Z axis, not a cell size as in `"chessboard"`. To orient the veins along a different axis, apply a `rotation` transform to the primitive.
 
