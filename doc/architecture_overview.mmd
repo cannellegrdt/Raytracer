@@ -1,0 +1,178 @@
+classDiagram
+    direction TB
+
+    %% ==================== Interfaces ====================
+
+    class IPrimitive {
+        <<interface>>
+        +intersect(Ray) optional~HitRecord~
+        +configure(params, material)
+        +boundingBox() AABB
+    }
+
+    class IMaterial {
+        <<interface>>
+        +scatter(Ray, HitRecord) ScatterResult
+        +getSpecular() optional~SpecularParams~
+        +isTransmissive() bool
+    }
+
+    class ILight {
+        <<interface>>
+        +getSample(Vec3, Vec3) LightSample
+    }
+
+    class ISceneLoader {
+        <<interface>>
+        +load(path, PrimitiveFactory) SceneContext
+    }
+
+    %% ==================== Plugin loading ====================
+
+    class PluginLoader {
+        +loadAll(dir, PrimitiveFactory)
+    }
+
+    class PrimitiveFactory {
+        +registerType(key, creator)
+        +create(key) IPrimitive
+    }
+
+    %% ==================== Scene loading ====================
+
+    class LibconfigLoader {
+        +load(path, PrimitiveFactory) SceneContext
+    }
+    note for LibconfigLoader "Delegates to CameraParser,\nLightsParser, PrimitivesParser,\nRendererParser"
+
+    class PrimitiveBuilder {
+        +setType() PrimitiveBuilder
+        +setMaterial() PrimitiveBuilder
+        +setTranslation() PrimitiveBuilder
+        +setRotation() PrimitiveBuilder
+        +setScale() PrimitiveBuilder
+        +setShear() PrimitiveBuilder
+        +setTransformMatrix() PrimitiveBuilder
+        +build() PrimitivePtr
+    }
+
+    %% ==================== Scene ====================
+
+    class SceneContext {
+        +scene Scene
+        +camera optional~Camera~
+        +antialiasing optional~Supersampling~
+        +nbAORays optional~int~
+    }
+
+    class Scene {
+        +addPrimitive(PrimitivePtr)
+        +addLight(unique_ptr~ILight~)
+        +bvh() BVH*
+    }
+
+    class Camera {
+        +generateRay(double, double) Ray
+        +getWidth() int
+        +getHeight() int
+    }
+
+    class BVH {
+        +build(primitives)
+        +intersect(Ray, primitives) optional~HitRecord~
+    }
+    note for BVH "SAH-based acceleration structure\nO(log n) ray intersection"
+
+    %% ==================== Rendering ====================
+
+    class Renderer {
+        +render(SceneContext, outputPath, gui)
+        -traceRay(Ray, Scene, depth, nbAORays) Color
+        -closestHit(Ray, Scene) optional~HitRecord~
+    }
+
+    %% ==================== Concrete implementations (grouped) ====================
+
+    class ConcreteDecorators {
+        <<group>>
+        TranslationDecorator
+        RotationDecorator
+        ScaleDecorator
+        ShearDecorator
+        TransformMatrixDecorator
+    }
+    note for ConcreteDecorators "Applied by PrimitiveBuilder in order:\nScale → Shear → Rotation → Translation → Matrix"
+
+    class ConcreteLights {
+        <<group>>
+        AmbientLight
+        DirectionalLight
+        PointLight
+    }
+
+    class ConcreteMaterials {
+        <<group>>
+        FlatColor · Reflection · Transparency
+        Refraction · PhongMaterial
+        TexturedMaterial · ProceduralCheckerboard
+        ProceduralMarble · NormalMapMaterial
+    }
+
+    class ConcretePlugins {
+        <<group>>
+        sphere · plane · cylinder · limited_cylinder
+        cone · limited_cone · torus · cube
+        tanglecube · triangle · mandelbulb · mobius · obj
+    }
+    note for ConcretePlugins "Each primitive is a .so plugin\nloaded at runtime via dlopen"
+
+    %% ==================== Data structs ====================
+
+    class HitRecord {
+        t · point · normal
+        material · frontFace
+        UV · tangent · bitangent
+    }
+
+    class LightSample {
+        direction · color
+        distance · isAmbient
+    }
+
+    class ScatterResult {
+        attenuation
+        scatteredRay
+        modifiedNormal
+    }
+
+    %% ==================== Relationships ====================
+
+    %% Loading pipeline
+    ISceneLoader <|.. LibconfigLoader : implements
+    LibconfigLoader --> PrimitiveBuilder : uses
+    LibconfigLoader ..> SceneContext : produces
+    PrimitiveBuilder --> PrimitiveFactory : uses
+    PluginLoader --> PrimitiveFactory : populates
+
+    %% Scene structure
+    SceneContext *-- Scene
+    SceneContext o-- Camera
+    Scene o-- IPrimitive
+    Scene o-- ILight
+    Scene *-- BVH
+
+    %% Render pipeline
+    Renderer --> SceneContext : reads
+    Renderer ..> HitRecord : closestHit
+    IPrimitive ..> HitRecord : intersect
+
+    %% Interface implementations
+    IPrimitive <|.. ConcretePlugins : implements
+    IPrimitive <|.. ConcreteDecorators : wraps
+    IMaterial <|.. ConcreteMaterials : implements
+    ILight <|.. ConcreteLights : implements
+
+    %% Data used by rendering
+    IMaterial ..> ScatterResult : scatter
+    ILight ..> LightSample : getSample
+    HitRecord --> IMaterial : material ref

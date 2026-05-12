@@ -1,84 +1,535 @@
 classDiagram
     direction TB
 
-    class IPrimitive {
-        <<interface>>
-        +configure(map, shared_ptr~IMaterial~)
-        +intersect(Ray) optional~HitRecord~
+    %% ==================== Core Math ====================
+
+    class Vec3 {
+        +x double
+        +y double
+        +z double
+        +Vec3(double, double, double)
+        +operator+(Vec3) Vec3
+        +operator-(Vec3) Vec3
+        +operator*(Vec3) Vec3
+        +operator/(Vec3) Vec3
+        +operator[](int) double
+        +operator-() Vec3
+        +operator+=(Vec3) Vec3
+        +operator-=(Vec3) Vec3
+        +operator*=(Vec3) Vec3
+        +operator/=(Vec3) Vec3
     }
-    class IMaterial {
-        <<interface>>
-        +scatter(Ray, HitRecord) ScatterResult
+    note for Vec3 "Color = using Vec3 (alias, same fields)\nFree functions: dot, cross, length, normalize, reflect"
+
+    class Mat3 {
+        +m double[3][3]
+        +operator*(Vec3) Vec3
+        +operator*(Mat3) Mat3
+        +transpose() Mat3
+        +inverse() Mat3
     }
-    class ILight {
-        <<interface>>
-        +getSample(Vec3, Vec3) LightSample
+    note for Mat3 "Free functions: rotateX, rotateY, rotateZ, shearMatrix"
+
+    class Mat4 {
+        +m double[4][4]
+        +operator*(Mat4) Mat4
+        +transpose() Mat4
+        +inverse() Mat4
     }
-    class ISceneLoader {
-        <<interface>>
-        +load(string, PrimitiveFactory) SceneContext
+    note for Mat4 "Free functions: transformPoint, transformDirection,\nidentity4, translate, scale,\nrotateX4, rotateY4, rotateZ4, lookAt, perspective"
+
+    class Ray {
+        +origin Vec3
+        +direction Vec3
+        +at(double) Vec3
     }
 
-    class Factory~T~ {
-        -creators_ unordered_map
-        +registerType(string, CreatorFunc)
-        +create(string) optional~Ptr~
-    }
-    class DLLoader~T~ {
-        -handle_ HandlePtr
-        +getCreate() create_t
-        +getDestroy() destroy_t
-    }
-    class PluginLoader {
-        -_loadedPlugins DLLoader[]
-        +loadAll(string, PrimitiveFactory)
-    }
-    class LibconfigLoader {
-        +load(string, PrimitiveFactory) SceneContext
+    class AABB {
+        +min Vec3
+        +max Vec3
+        +empty()$ AABB
+        +infinite()$ AABB
+        +isInfinite() bool
+        +centroid() Vec3
+        +merge(AABB, AABB)$ AABB
+        +intersect(Ray, double, double) bool
     }
 
-    class Scene {
-        -primitives_ PrimitivePtr[]
-        -lights_ ILight[]
-        +addPrimitive(PrimitivePtr)
-        +addLight(ILight)
+    class SpecularParams {
+        +ks Vec3
+        +shininess double
     }
-    class Camera {
-        +generateRay(int x, int y) Ray
-    }
-    class SceneContext {
-        +scene Scene
-        +camera Camera
-    }
-    class PrimitiveBuilder {
-        +setType(string) self
-        +setMaterial(IMaterial) self
-        +setTranslation(Vec3) self
-        +setRotation(Vec3) self
-        +setScale(Vec3) self
-        +build() PrimitivePtr
-    }
-    class Renderer {
-        +render(SceneContext)
-    }
+
+    %% ==================== Rendering Results ====================
+
     class HitRecord {
         +t double
         +point Vec3
         +normal Vec3
         +material shared_ptr~IMaterial~
+        +frontFace bool
+        +UV pair~double·double~
+        +tangent Vec3
+        +bitangent Vec3
     }
 
+    class LightSample {
+        +direction Vec3
+        +color Vec3
+        +distance double
+        +isAmbient bool
+        +maxDistance double
+    }
+
+    class ScatterResult {
+        +attenuation Vec3
+        +scatteredRay optional~Ray~
+        +modifiedNormal optional~Vec3~
+    }
+
+    %% ==================== Interfaces ====================
+
+    class IPrimitive {
+        <<interface>>
+        +intersect(Ray) optional~HitRecord~
+        +configure(map~str·double~, shared_ptr~IMaterial~)
+        +setFilePath(string)
+        +boundingBox() AABB
+    }
+
+    class IMaterial {
+        <<interface>>
+        +scatter(Ray, HitRecord) ScatterResult
+        +getSpecular() optional~SpecularParams~
+        +isTransmissive() bool
+    }
+
+    class ILight {
+        <<interface>>
+        +getSample(Vec3, Vec3) LightSample
+    }
+
+    class ISceneLoader {
+        <<interface>>
+        +load(string, PrimitiveFactory) SceneContext
+    }
+
+    %% ==================== Plugin Infrastructure ====================
+
+    class Factory~T~ {
+        -_creators map~string·CreatorFunc~
+        +registerType(string, CreatorFunc)
+        +create(string) optional~Ptr~
+    }
+    note for Factory~T~ "PrimitiveFactory = Factory~IPrimitive~ (PrimitivePtr)\nLoaderFactory  = Factory~ISceneLoader~"
+
+    class DLLoader~T~ {
+        -_handle HandlePtr
+        -_create create_t
+        -_destroy destroy_t
+        +DLLoader(string)
+        +getCreate() create_t
+        +getDestroy() destroy_t
+    }
+
+    class PluginLoader {
+        -_loadedPlugins vector~DLLoader~
+        +loadAll(string, PrimitiveFactory)
+    }
+
+    class LibconfigLoader {
+        +load(string, PrimitiveFactory) SceneContext
+        -load(string, PrimitiveFactory, set~string~) SceneContext
+    }
+
+    %% ==================== Scene ====================
+
+    class Scene {
+        -_primitives vector~PrimitivePtr~
+        -_lights vector~unique_ptr~ILight~~
+        -_backgroundColor Vec3
+        -_bvhFlag unique_ptr~once_flag~
+        -_bvh unique_ptr~BVH~
+        +addPrimitive(PrimitivePtr)
+        +addLight(unique_ptr~ILight~)
+        +primitives() vector~PrimitivePtr~
+        +lights() vector~unique_ptr~ILight~~
+        +setBackgroundColor(Vec3)
+        +backgroundColor() Vec3
+        +bvh() BVH*
+    }
+
+    class Camera {
+        -_position Vec3
+        -_rotation Vec3
+        -_fov double
+        -_width int
+        -_height int
+        -_halfHeight double
+        -_halfWidth double
+        -_rotMatrix Mat3
+        +Camera(Vec3, Vec3, double, int, int)
+        +generateRay(double, double) Ray
+        +getWidth() int
+        +getHeight() int
+    }
+
+    class Supersampling {
+        +samples int
+        +type string
+        +threshold double
+    }
+
+    class SceneContext {
+        +scene Scene
+        +camera optional~Camera~
+        +antialiasing optional~Supersampling~
+        +nbAORays optional~int~
+    }
+
+    class BVH {
+        -_nodes vector~BVH_Node~
+        -_primIndices vector~int~
+        -_unbounded vector~int~
+        +build(vector~PrimitivePtr~)
+        +intersect(Ray, vector~PrimitivePtr~) optional~HitRecord~
+        -traverseNode(int, Ray, double, double, vector~PrimitivePtr~) optional~HitRecord~
+    }
+
+    class BVH_Node {
+        <<struct>>
+        +box AABB
+        +left int
+        +right int
+        +begin int
+        +end int
+    }
+
+    class GroupNode {
+        -_children vector~PrimitivePtr~
+        -_transform Mat4
+        -_invTransform Mat4
+        -_hasTransform bool
+        +GroupNode()
+        +GroupNode(vector~PrimitivePtr~)
+        +GroupNode(vector~PrimitivePtr~, Mat4)
+        +addChild(PrimitivePtr)
+        +setTransform(Mat4)
+        +intersect(Ray) optional~HitRecord~
+        +configure(map~str·double~, shared_ptr~IMaterial~)
+        +boundingBox() AABB
+    }
+
+    %% ==================== Builder ====================
+
+    class ShearFactors {
+        +sxy double
+        +sxz double
+        +syx double
+        +syz double
+        +szx double
+        +szy double
+    }
+
+    class PrimitiveBuilder {
+        -_factory PrimitiveFactory
+        -_type string
+        -_material shared_ptr~IMaterial~
+        -_translation optional~Vec3~
+        -_rotation optional~Vec3~
+        -_scale optional~Vec3~
+        -_shear optional~ShearFactors~
+        -_transformMatrix optional~Mat4~
+        -_params map~string·double~
+        -_filePath optional~string~
+        +PrimitiveBuilder(PrimitiveFactory)
+        +setType(string) PrimitiveBuilder
+        +setMaterial(shared_ptr~IMaterial~) PrimitiveBuilder
+        +setTranslation(Vec3) PrimitiveBuilder
+        +setRotation(Vec3) PrimitiveBuilder
+        +setScale(Vec3) PrimitiveBuilder
+        +setShear(ShearFactors) PrimitiveBuilder
+        +setTransformMatrix(Mat4) PrimitiveBuilder
+        +setParams(map~string·double~) PrimitiveBuilder
+        +setFile(string) PrimitiveBuilder
+        +build() PrimitivePtr
+        +reset()
+    }
+
+    %% ==================== Parsers ====================
+
+    class CameraParser {
+        +parse(Config)$ optional~Camera~
+    }
+
+    class LightsParser {
+        +parseAndAddLights(Setting, Scene)$
+    }
+
+    class MaterialBuilder {
+        +build(Setting)$ shared_ptr~IMaterial~
+    }
+
+    class PrimitivesParser {
+        +parse(Setting, PrimitiveBuilder)$ vector~PrimitivePtr~
+    }
+
+    class RendererParser {
+        +parseAntialiasing(Config)$ optional~Supersampling~
+        +parseAORays(Config)$ optional~int~
+    }
+
+    class TransformBuilder {
+        +applyTransforms(PrimitivePtr, Setting)$ PrimitivePtr
+    }
+
+    class ConfigUtils {
+        +toDouble(Setting)$ double
+        +checkValues(Config, string)$ optional~ref~Setting~~
+    }
+
+    %% ==================== Renderer ====================
+
+    class Renderer {
+        +render(SceneContext, string, bool, atomic~bool~*)
+        -renderTiles(SceneContext, vector~Vec3~, RenderParams, atomic~bool~*)
+        -writePPM(string, vector~Vec3~, int, int)
+        -displayLoop(vector~Vec3~, RenderParams, SceneContext, atomic~bool~*)
+        -traceRay(Ray, Scene, int, int) Vec3
+        -closestHit(Ray, Scene)$ optional~HitRecord~
+    }
+
+    class RenderParams {
+        <<struct>>
+        +width int
+        +height int
+        +samples int
+        +aaType string
+        +threshold double
+        +nbAORays int
+    }
+
+    %% ==================== Decorators ====================
+
+    class TranslationDecorator {
+        -_inner PrimitivePtr
+        -_offset Vec3
+        +TranslationDecorator(PrimitivePtr, Vec3)
+        +intersect(Ray) optional~HitRecord~
+        +configure(map~str·double~, shared_ptr~IMaterial~)
+    }
+
+    class RotationDecorator {
+        -_inner PrimitivePtr
+        -_angles Vec3
+        -_rotation Mat3
+        -_invRotation Mat3
+        +RotationDecorator(PrimitivePtr, Vec3)
+        +intersect(Ray) optional~HitRecord~
+        +configure(map~str·double~, shared_ptr~IMaterial~)
+    }
+
+    class ScaleDecorator {
+        -_inner PrimitivePtr
+        -_scale Vec3
+        +ScaleDecorator(PrimitivePtr, Vec3)
+        +intersect(Ray) optional~HitRecord~
+        +configure(map~str·double~, shared_ptr~IMaterial~)
+    }
+
+    class ShearDecorator {
+        -_inner PrimitivePtr
+        -_shear Mat3
+        -_invShear Mat3
+        -_invShearTransposed Mat3
+        +ShearDecorator(PrimitivePtr, double, double, double, double, double, double)
+        +intersect(Ray) optional~HitRecord~
+        +configure(map~str·double~, shared_ptr~IMaterial~)
+    }
+
+    class TransformMatrixDecorator {
+        -_inner PrimitivePtr
+        -_transformMatrix Mat4
+        -_invMatrix Mat4
+        +TransformMatrixDecorator(PrimitivePtr, Mat4)
+        +intersect(Ray) optional~HitRecord~
+        +configure(map~str·double~, shared_ptr~IMaterial~)
+    }
+
+    %% ==================== Concrete Lights ====================
+
+    class AmbientLight {
+        -_color Vec3
+        -_intensity double
+        -_maxDist double
+        +AmbientLight(Vec3, double, double)
+        +getSample(Vec3, Vec3) LightSample
+    }
+
+    class DirectionalLight {
+        -_direction Vec3
+        -_color Vec3
+        -_intensity double
+        +DirectionalLight(Vec3, Vec3, double)
+        +getSample(Vec3, Vec3) LightSample
+    }
+
+    class PointLight {
+        -_position Vec3
+        -_color Vec3
+        -_intensity double
+        +PointLight(Vec3, Vec3, double)
+        +getSample(Vec3, Vec3) LightSample
+    }
+
+    %% ==================== Concrete Materials ====================
+
+    class FlatColor {
+        -_color Vec3
+        +FlatColor(Vec3)
+        +scatter(Ray, HitRecord) ScatterResult
+    }
+
+    class Reflection {
+        -_color Vec3
+        +Reflection(Vec3)
+        +scatter(Ray, HitRecord) ScatterResult
+    }
+
+    class Transparency {
+        -_color Vec3
+        +Transparency(Vec3)
+        +scatter(Ray, HitRecord) ScatterResult
+        +isTransmissive() bool
+    }
+
+    class Refraction {
+        -_color Vec3
+        -_ior double
+        +Refraction(Vec3, double)
+        +scatter(Ray, HitRecord) ScatterResult
+    }
+
+    class PhongMaterial {
+        -_color Vec3
+        -_specularParams SpecularParams
+        +PhongMaterial(Vec3, Vec3, double)
+        +scatter(Ray, HitRecord) ScatterResult
+        +getSpecular() optional~SpecularParams~
+    }
+
+    class TexturedMaterial {
+        -_width int
+        -_height int
+        -_pixels vector~Vec3~
+        +TexturedMaterial(string)
+        +scatter(Ray, HitRecord) ScatterResult
+        -loadPPM(string)
+    }
+
+    class ProceduralCheckerboard {
+        -_colors pair~Vec3·Vec3~
+        -_scale double
+        +ProceduralCheckerboard(Vec3, Vec3, double)
+        +scatter(Ray, HitRecord) ScatterResult
+    }
+
+    class ProceduralMarble {
+        -_colors pair~Vec3·Vec3~
+        -_scale double
+        -_turbulence double
+        -_octaves int
+        -_noise PerlinNoise
+        +ProceduralMarble(Vec3, Vec3, double, double, int)
+        +scatter(Ray, HitRecord) ScatterResult
+    }
+
+    class NormalMapMaterial {
+        -_baseMaterial shared_ptr~IMaterial~
+        -_width int
+        -_height int
+        -_pixels vector~Vec3~
+        +NormalMapMaterial(shared_ptr~IMaterial~, string)
+        +scatter(Ray, HitRecord) ScatterResult
+        +getSpecular() optional~SpecularParams~
+        -loadPPM(string)
+    }
+
+    %% ==================== Perlin Noise ====================
+
+    class PerlinNoise {
+        -_perm int[512]
+        -_gradients Vec3[12]
+        +PerlinNoise(unsigned int)
+        +noise(Vec3) double
+        +fractal(Vec3, int) double
+        -fade(double)$ double
+        -lerp(double, double, double)$ double
+        -dotGradient(int, double, double, double) double
+    }
+
+    %% ==================== Relationships ====================
+
+    %% Interface implementations
     ISceneLoader <|.. LibconfigLoader : implements
-    PluginLoader *-- DLLoader~T~ : owns
+    IPrimitive <|.. GroupNode : implements
+    IPrimitive <|.. TranslationDecorator : implements
+    IPrimitive <|.. RotationDecorator : implements
+    IPrimitive <|.. ScaleDecorator : implements
+    IPrimitive <|.. ShearDecorator : implements
+    IPrimitive <|.. TransformMatrixDecorator : implements
+    IMaterial <|.. FlatColor : implements
+    IMaterial <|.. Reflection : implements
+    IMaterial <|.. Transparency : implements
+    IMaterial <|.. Refraction : implements
+    IMaterial <|.. PhongMaterial : implements
+    IMaterial <|.. TexturedMaterial : implements
+    IMaterial <|.. ProceduralCheckerboard : implements
+    IMaterial <|.. ProceduralMarble : implements
+    IMaterial <|.. NormalMapMaterial : implements
+    ILight <|.. AmbientLight : implements
+    ILight <|.. DirectionalLight : implements
+    ILight <|.. PointLight : implements
+
+    %% Plugin infrastructure
+    PluginLoader *-- DLLoader~T~ : _loadedPlugins
     PluginLoader --> Factory~T~ : populates
-    PrimitiveBuilder --> Factory~T~ : uses
     LibconfigLoader --> Factory~T~ : uses
-    Scene o-- IPrimitive : PrimitivePtr[]
-    Scene o-- ILight : unique_ptr[]
-    SceneContext *-- Scene
-    SceneContext *-- Camera
+    PrimitiveBuilder --> Factory~T~ : uses
+
+    %% Scene structure
+    Scene o-- IPrimitive : _primitives
+    Scene o-- ILight : _lights
+    Scene *-- BVH : _bvh
+    BVH *-- BVH_Node : _nodes
+    SceneContext *-- Scene : scene
+    SceneContext o-- Camera : camera
+    SceneContext o-- Supersampling : antialiasing
+
+    %% Data flows
     ISceneLoader ..> SceneContext : produces
     Renderer --> SceneContext : reads
-    HitRecord --> IMaterial : references
+    Renderer *-- RenderParams
+    HitRecord --> IMaterial : material
     IPrimitive ..> HitRecord : returns
     IMaterial ..> HitRecord : reads
+    IMaterial ..> ScatterResult : returns
+    ILight ..> LightSample : returns
+
+    %% Parsers
+    LibconfigLoader --> CameraParser : uses
+    LibconfigLoader --> LightsParser : uses
+    LibconfigLoader --> PrimitivesParser : uses
+    LibconfigLoader --> RendererParser : uses
+    PrimitivesParser --> MaterialBuilder : uses
+    PrimitivesParser --> TransformBuilder : uses
+    PrimitivesParser --> PrimitiveBuilder : uses
+
+    %% Builder
+    PrimitiveBuilder o-- ShearFactors : _shear
+
+    %% Composition
+    NormalMapMaterial --> IMaterial : _baseMaterial
+    GroupNode *-- IPrimitive : _children
+    ProceduralMarble *-- PerlinNoise : _noise
+    PhongMaterial *-- SpecularParams : _specularParams
