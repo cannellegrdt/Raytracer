@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: Scene.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Scene container holding all primitives and lights for a render.
+ * File description: Scene container class that holds all geometric primitives
+ *                   and light sources for a render, with lazy BVH construction
+ *                   for efficient ray-scene intersection tests.
  */
 
 
@@ -50,11 +52,11 @@ public:
     const BVH *bvh() const;
 
 private:
-    std::vector<PrimitivePtr> _primitives;
-    std::vector<std::unique_ptr<ILight>> _lights;
-    Color _backgroundColor{0, 0, 0};
-    std::unique_ptr<std::once_flag> _bvhFlag;
-    mutable std::unique_ptr<BVH> _bvh;
+    std::vector<PrimitivePtr> _primitives;        ///< List of geometric primitives in the scene.
+    std::vector<std::unique_ptr<ILight>> _lights; ///< List of light sources in the scene.
+    Color _backgroundColor;                       ///< Background color for rays that don't hit anything.
+    std::unique_ptr<std::once_flag> _bvhFlag;     ///< Flag for thread-safe BVH initialization.
+    mutable std::unique_ptr<BVH> _bvh;            ///< Lazily-built BVH for efficient ray-scene intersection.
 };
 
 #endif /* SCENE_HPP_ */

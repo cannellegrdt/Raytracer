@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Camera.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Camera defined by position, rotation, and fov; generates rays for each pixel.
+ * File description: Camera class for raytracing that defines position, rotation,
+ *                   and field of view, generating rays for each pixel during rendering.
  */
 
 #ifndef CAMERA_HPP_

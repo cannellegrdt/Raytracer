@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Color.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Color alias over Vec3, with component clamping and PPM byte conversion.
+ * File description: Color type alias over Vec3 with component clamping utilities
+ *                   and PPM byte conversion functions for image output.
  */
 
 #ifndef COLOR_HPP_

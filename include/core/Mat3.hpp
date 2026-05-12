@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Mat3.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: 3x3 rotation matrix with rotateX/Y/Z factory functions.
+ * File description: 3x3 matrix implementation for rotations and transformations with
+ *                   rotation matrix factories and utility functions.
  */
 
 #ifndef MAT3_HPP_
@@ -12,7 +13,7 @@
 
 /// @brief 3x3 matrix for rotations and transformations.
 struct Mat3 {
-    double m[3][3] = {}; ///< Matrix elements in row-major order.
+    double m[3][3] = {}; ///< Matrix elements in row-major order [row][column].
 
     /// @brief Matrix-vector multiplication.
     /// @param v Vector to multiply.

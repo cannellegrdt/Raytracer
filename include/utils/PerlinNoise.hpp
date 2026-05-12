@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: PerlinNoise.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Perlin noise utility class header providing coherent pseudo-random 3D noise and fractal Brownian motion.
+ * File description: Perlin noise utility class providing coherent pseudo-random 3D noise
+ *                   and fractal Brownian motion for procedural texture generation.
  */
 
 #ifndef PERLINNOISE_HPP_

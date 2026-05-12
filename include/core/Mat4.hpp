@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Mat4.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: 4x4 homogeneous matrix for 3D transformations.
+ * File description: 4x4 homogeneous matrix implementation for 3D transformations including
+ *                   translation, rotation, scaling, and perspective projections.
  */
 
 #ifndef MAT4_HPP_
@@ -12,9 +13,9 @@
     #include <stdexcept>
     #include "Vec3.hpp"
 
-    /// @brief 4x4 homogeneous matrix for 3D transformations.
-    struct Mat4 {
-        double m[4][4] = {};
+/// @brief 4x4 homogeneous matrix for 3D transformations.
+struct Mat4 {
+    double m[4][4] = {}; ///< Matrix elements in row-major order [row][column].
 
         /// @brief Matrix-matrix multiplication.
         /// @param o Other matrix.

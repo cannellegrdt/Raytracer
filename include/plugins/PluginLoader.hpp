@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: PluginLoader.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Scans a directory for .so plugin files, loads each via DLLoader, and registers their creators into a PrimitiveFactory.
+ * File description: Scans a directory for .so plugin files, loads each via DLLoader,
+ *                   and registers their creators into a PrimitiveFactory.
  */
 
 #ifndef PLUGINLOADER_HPP_
@@ -22,7 +23,7 @@ public:
     void loadAll(const std::string &pluginsDir, PrimitiveFactory &factory);
 
 private:
-    std::vector<DLLoader<IPrimitive>> _loadedPlugins;
+    std::vector<DLLoader<IPrimitive>> _loadedPlugins;  ///< List of loaded plugin dynamic library wrappers.
 };
 
 #endif /* PLUGINLOADER_HPP_ */

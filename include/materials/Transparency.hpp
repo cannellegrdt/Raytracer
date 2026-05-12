@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Transparency.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Material that transmits rays with color attenuation (transparency/transmission).
+ * File description: Material implementation that transmits rays with color attenuation
+ *                   for simulating transparent materials like glass or water.
  */
 
 #ifndef TRANSPARENCY_HPP

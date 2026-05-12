@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Factory.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Generic factory mapping string keys to creator functions, with a PrimitiveFactory alias.
+ * File description: Generic factory mapping string keys to creator functions,
+ *                   with a PrimitiveFactory alias.
  */
 
 #ifndef FACTORY_HPP_
@@ -41,7 +42,7 @@ public:
     }
 
 private:
-    std::unordered_map<std::string, CreatorFunc> _creators;
+    std::unordered_map<std::string, CreatorFunc> _creators;  ///< Map of registered creator functions by key.
 };
 
 /// @brief Factory specialization for primitives.

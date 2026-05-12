@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: CameraParser.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Parser for camera from libconfig settings.
+ * File description: Parser implementation for extracting camera settings
+ *                   from libconfig configuration files and creating Camera objects.
  */
 
 #ifndef CAMERAPARSER_HPP_

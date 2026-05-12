@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: ScatterResult.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Material scatter output holding color attenuation and an optional scattered ray.
+ * File description: Data structure representing the result of a material's scatter operation,
+ *                   including color attenuation, scattered ray, and optional modified normal
+ *                   for lighting calculations.
  */
 
 #ifndef SCATTERRESULT_HPP_

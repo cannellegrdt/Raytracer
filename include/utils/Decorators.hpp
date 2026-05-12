@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Decorators.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Decorator pattern for transforming primitives (translation, rotation, scale).
+ * File description: Decorator pattern implementation for transforming primitives
+ *                  with translation, rotation, scaling, shearing, and matrix transformations.
  */
 
 #ifndef DECORATORS_HPP_
@@ -22,8 +23,8 @@ public:
     std::optional<HitRecord> intersect(const Ray &ray) const override;
 
 private:
-    PrimitivePtr _inner;   ///< Wrapped primitive.
-    Vec3 _offset;          ///< Translation offset.
+    PrimitivePtr _inner; ///< Wrapped primitive being decorated.
+    Vec3 _offset;        ///< Translation offset vector (x, y, z).
 };
 
 /// @brief Decorator that rotates a primitive around a center point.
@@ -37,10 +38,10 @@ public:
     std::optional<HitRecord> intersect(const Ray &ray) const override;
 
 private:
-    PrimitivePtr _inner;   ///< Wrapped primitive.
-    Vec3 _angles;          ///< Rotation angles.
-    Mat3 _rotation;        ///< Rotation matrix.
-    Mat3 _invRotation;     ///< Inverse rotation matrix.
+    PrimitivePtr _inner; ///< Wrapped primitive being decorated.
+    Vec3 _angles;        ///< Rotation angles in radians (X, Y, Z).
+    Mat3 _rotation;      ///< Rotation matrix for transforming points.
+    Mat3 _invRotation;   ///< Inverse rotation matrix for transforming normals.
 };
 
 /// @brief Decorator that scales a primitive.
@@ -54,8 +55,8 @@ public:
     std::optional<HitRecord> intersect(const Ray &ray) const override;
 
 private:
-    PrimitivePtr _inner;   ///< Wrapped primitive.
-    Vec3 _scale;           ///< Scale factors.
+    PrimitivePtr _inner; ///< Wrapped primitive being decorated.
+    Vec3 _scale;         ///< Scale factors for X, Y, Z axes.
 };
 
 /// @brief Decorator that shear a primitive around a center point.
@@ -69,10 +70,10 @@ public:
     std::optional<HitRecord> intersect(const Ray &ray) const override;
 
 private:
-    PrimitivePtr _inner;      ///< Wrapped primitive.
-    Mat3 _shear;              ///< Shear matrix.
+    PrimitivePtr _inner;      ///< Wrapped primitive being decorated.
+    Mat3 _shear;              ///< Shear matrix for transforming points.
     Mat3 _invShear;           ///< Inverse shear matrix.
-    Mat3 _invShearTransposed; ///< Transposed inverse shear matrix.
+    Mat3 _invShearTransposed; ///< Transposed inverse shear matrix for normal transformation.
 };
 
 /// @brief Decorator that transform a primitive with a 4x4 matrix.

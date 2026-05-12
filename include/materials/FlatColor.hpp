@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: FlatColor.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Flat-color material returning a constant color attenuation with no scattered ray.
+ * File description: Flat-color material implementation that returns a constant
+ *                   color attenuation with no scattered ray, useful for emissive
+ *                   or ambient-like materials.
  */
 
 #ifndef FLATCOLOR_HPP_

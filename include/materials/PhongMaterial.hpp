@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: PhongMaterial.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Phong material with diffuse and specular components for realistic shading.
+ * File description: Phong material implementation with diffuse and specular
+ *                   components for realistic shading using the Phong reflection model.
  */
 
 #ifndef PHONGMATERIAL_HPP_

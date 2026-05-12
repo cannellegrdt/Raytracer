@@ -2,9 +2,9 @@
  * Project: Raytracer
  * File name: SAHBuilder.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Shared SAH-binned BVH construction algorithm. Templated over
- *                   the node type so it can be reused for scene-level primitives
- *                   (BVH.cpp) and mesh-level triangles (obj.cpp).
+ * File description: Shared Surface Area Heuristic (SAH) based BVH construction
+ *                   algorithm implementation, templated for reuse with both
+ *                   scene-level primitives and mesh-level triangles.
  */
 
 #ifndef SAHBUILDER_HPP_
@@ -14,9 +14,12 @@
     #include <limits>
     #include "AABB.hpp"
 
-    static constexpr int NUM_BINS = 12;
-    static constexpr int MAX_LEAF_SIZE = 4;
+    static constexpr int NUM_BINS = 12;     ///< Number of bins for SAH calculation.
+    static constexpr int MAX_LEAF_SIZE = 4; ///< Maximum number of primitives in a leaf node.
 
+/// @brief Calculates the surface area of an axis-aligned bounding box.
+/// @param box The AABB to calculate surface area for.
+/// @return Surface area of the box.
 inline double surfaceArea(const AABB &box) {
     Vec3 d = box.max - box.min;
     if (d.x < 0.0 || d.y < 0.0 || d.z < 0.0) return 0.0;
@@ -162,10 +165,10 @@ public:
     }
 
 private:
-    std::vector<int> &_indices;
-    std::vector<Node> &_nodes;
-    GetAABB _getAABB;
-    GetCentroid _getCentroid;
+    std::vector<int> &_indices;      ///< Reference to primitive indices to build from.
+    std::vector<Node> &_nodes;       ///< Reference to node storage for the BVH tree.
+    GetAABB _getAABB;                ///< Function to get AABB for a primitive by index.
+    GetCentroid _getCentroid;        ///< Function to get centroid for a primitive by index.
 };
 
 #endif /* SAHBUILDER_HPP_ */

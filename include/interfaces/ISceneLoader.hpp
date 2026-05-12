@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: ISceneLoader.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Interface for scene file parsers; loads a SceneContext from a file path using a PrimitiveFactory.
+ * File description: Interface definition for scene file loaders in the ray tracer,
+ *                   enabling loading of scene configurations from various file formats.
  */
 
 #ifndef ISCENELOADER_HPP_

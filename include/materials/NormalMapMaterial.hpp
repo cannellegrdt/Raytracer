@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: NormalMapMaterial.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Material that uses a normal map to perturb surface normals for lighting.
+ * File description: Material implementation that uses a normal map to perturb
+ *                   surface normals for enhanced lighting detail, combining
+ *                   a base material with texture-based normal perturbations.
  */
 
 #ifndef NORMALMAPMATERIAL_HPP_

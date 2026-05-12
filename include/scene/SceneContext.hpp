@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: SceneContext.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Aggregate of a Scene and a Camera representing a fully-described render setup.
+ * File description: Aggregate structure combining a Scene and Camera representing a complete render setup
+ *                   with optional supersampling and ambient occlusion settings.
  */
 
 #ifndef SCENECONTEXT_HPP_

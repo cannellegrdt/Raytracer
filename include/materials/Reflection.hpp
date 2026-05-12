@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Reflection.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Material that reflects rays with a constant color attenuation.
+ * File description: Material implementation that reflects rays with a constant color attenuation,
+ *                   simulating reflective surfaces like mirrors or metallic materials.
  */
 
 #ifndef REFLECTION_HPP_

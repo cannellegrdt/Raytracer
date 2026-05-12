@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: ProceduralMarble.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Procedural marble material using Perlin noise
+ * File description: Procedural marble material implementation using Perlin noise
+ *                   to generate realistic marble patterns with color veins and turbulence.
  */
 
 #ifndef PROCEDURALMARBLE_HPP_
@@ -14,7 +15,8 @@
 
 class ProceduralMarble : public IMaterial {
 public:
-    explicit ProceduralMarble(const Color &colorA, const Color &colorB, double scale, double turbulence, int octaves) : _colors(colorA, colorB), _scale(scale), _turbulence(turbulence), _octaves(octaves) {}
+    explicit ProceduralMarble(const Color &colorA, const Color &colorB, double scale, double turbulence, int octaves)
+        : _colors(colorA, colorB), _scale(scale), _turbulence(turbulence), _octaves(octaves) {}
 
     ScatterResult scatter(const Ray &ray, const HitRecord &hit) const override;
 

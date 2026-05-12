@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Ray.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Ray struct with origin, direction, and parametric point evaluation.
+ * File description: Ray structure representing a geometric ray with origin and direction,
+ *                   including point evaluation along the ray.
  */
 
 #ifndef RAY_HPP_

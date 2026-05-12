@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: PrimitiveBuilder.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Builder pattern for constructing primitives with optional decorators.
+ * File description: Builder pattern implementation for constructing primitives
+ *                   with optional decorators such as translation, rotation,
+ *                   scaling, shearing, and matrix transformations.
  */
 
 #ifndef PRIMITIVEBUILDER_HPP_
@@ -85,16 +87,16 @@ public:
     void reset();
 
 private:
-    PrimitiveFactory &_factory;                        ///< Factory for creating primitives.
-    std::string _type;                                 ///< Primitive type identifier.
-    std::shared_ptr<IMaterial> _material;              ///< Material for the primitive.
-    std::optional<Vec3> _translation;                  ///< Translation vector.
-    std::optional<Vec3> _rotation;                     ///< Rotation angles.
-    std::optional<Vec3> _scale;                        ///< Scale factors.
-    std::optional<ShearFactors> _shear;                ///< Shear factors.
-    std::optional<Mat4> _transformMatrix;              ///< 4x4 matrix.
-    std::unordered_map<std::string, double> _params;   ///< Geometry parameters for configure().
-    std::optional<std::string> _filePath;              ///< Source file path for file-based primitives.
+    PrimitiveFactory &_factory;                      ///< Factory for creating primitives.
+    std::string _type;                               ///< Primitive type identifier.
+    std::shared_ptr<IMaterial> _material;            ///< Material for the primitive.
+    std::optional<Vec3> _translation;                ///< Translation vector.
+    std::optional<Vec3> _rotation;                   ///< Rotation angles.
+    std::optional<Vec3> _scale;                      ///< Scale factors.
+    std::optional<ShearFactors> _shear;              ///< Shear factors.
+    std::optional<Mat4> _transformMatrix;            ///< 4x4 matrix.
+    std::unordered_map<std::string, double> _params; ///< Geometry parameters for configure().
+    std::optional<std::string> _filePath;            ///< Source file path for file-based primitives.
 };
 
 #endif /* PRIMITIVEBUILDER_HPP_ */

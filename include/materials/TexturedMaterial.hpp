@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: TexturedMaterial.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Textured material that reads color from an image file using UV coordinates.
+ * File description: Textured material implementation that reads color from an image file
+ *                   using UV coordinates for texture mapping, supporting PPM format images.
  */
 
 #ifndef TEXTUREDMATERIAL_HPP_
@@ -31,9 +32,9 @@
         /// @param filePath Path to the PPM file.
         void loadPPM(const std::string &filePath);
 
-        int _width = 0;
-        int _height = 0;
-        std::vector<Color> _pixels;  ///< Flattened image pixels (row-major order).
+        int _width;                 ///< Width of the texture image in pixels.
+        int _height;                ///< Height of the texture image in pixels.
+        std::vector<Color> _pixels; ///< Flattened image pixels (row-major order).
     };
 
 #endif /* TEXTUREDMATERIAL_HPP_ */

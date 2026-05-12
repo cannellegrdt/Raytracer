@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: GroupNode.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Scene graph group node - gathers N children primitives under a shared local transform.
+ * File description: Scene graph group node implementation that gathers N children
+ *                   primitives under a shared local transform, enabling transform
+ *                   hierarchies in the scene graph.
  */
 
 #ifndef GROUPNODE_HPP_
@@ -41,10 +43,10 @@ public:
     AABB boundingBox() const override;
 
 private:
-    std::vector<PrimitivePtr> _children;
-    Mat4 _transform{identity4()};
-    Mat4 _invTransform{identity4()};
-    bool _hasTransform{false};
+    std::vector<PrimitivePtr> _children;   ///< Child primitives contained in this group.
+    Mat4 _transform;                       ///< Local-to-world transformation matrix.
+    Mat4 _invTransform;                    ///< Inverse transformation matrix for normal transformation.
+    bool _hasTransform;                    ///< Flag indicating if a non-identity transform is set.
 };
 
 /// @brief Creates a PrimitivePtr owning an empty GroupNode.

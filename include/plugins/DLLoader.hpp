@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: DLLoader.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: RAII template wrapper for dlopen/dlsym; loads a shared library and exposes typed create/destroy function pointers.
+ * File description: RAII template wrapper for dlopen/dlsym;
+ *                   loads a shared library and exposes typed create/destroy function pointers.
  */
 
 #ifndef DLLOADER_HPP_

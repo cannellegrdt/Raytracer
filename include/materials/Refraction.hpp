@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: Refraction.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Material that refracts rays according to Snell-Descartes law.
+ * File description: Material implementation that refracts rays according to
+ *                   Snell-Descartes law (Snell's law), handling total internal
+ *                   reflection and using Schlick's approximation for Fresnel effects.
  */
 
 #ifndef REFRACTION_HPP_

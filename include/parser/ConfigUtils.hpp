@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: ConfigUtils.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Utility class for libconfig++ helper functions.
+ * File description: Utility class providing helper functions for libconfig++ 
+ *                   parsing, including type conversion and path validation utilities.
  */
 
 #ifndef CONFIGUTILS_HPP_

@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: IMaterial.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Interface for materials; defines how a ray scatters and attenuates on a surface.
+ * File description: Interface definition for materials in the ray tracer,
+ *                   defining how rays scatter and attenuate when hitting surfaces.
  */
 
 #ifndef IMATERIAL_HPP_

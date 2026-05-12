@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: IPrimitive.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Interface for geometric primitives; defines ray-intersection returning an optional HitRecord.
+ * File description: Interface definition for geometric primitives in the ray tracer,
+ *                   defining the contract for ray intersection and primitive configuration.
  */
 
 #ifndef IPRIMITIVE_HPP_

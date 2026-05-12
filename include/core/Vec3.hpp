@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Vec3.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Vec3 struct with arithmetic operators, dot, cross, length, normalize.
+ * File description: 3D vector structure with arithmetic operations, dot product, cross product,
+ *                   length calculation, normalization, and related vector math utilities.
  */
 
 #ifndef VEC3_HPP_
@@ -13,7 +14,7 @@
 
 /// @brief 3D vector with x, y, z components.
 struct Vec3 {
-    double x, y, z;
+    double x, y, z; ///< X Y Z components.
 
     /// @brief Constructs a Vec3 with optional components.
     /// @param x X component (default 0)

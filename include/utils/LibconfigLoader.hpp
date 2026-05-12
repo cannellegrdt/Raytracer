@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: LibconfigLoader.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: ISceneLoader implementation that parses .cfg scene files using libconfig++.
+ * File description: ISceneLoader implementation that parses .cfg scene files using libconfig++
+ *                   for loading scene configurations including primitives, materials, lights,
+ *                   and camera settings.
  */
 
 #ifndef LIBCONFIGLOADER_HPP_

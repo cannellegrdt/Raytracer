@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: SpecularParams.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Specular reflection parameters for Phong shading model.
+ * File description: Specular reflection parameters structure for Phong shading model,
+ *                   defining highlight color and shininess exponent.
  */
 
 #ifndef SPECULARPARAMS_HPP_

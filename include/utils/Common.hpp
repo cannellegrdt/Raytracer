@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: Common.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Shared constants and utility definitions used across the project.
+ * File description: Shared constants and utility definitions used across the project
+ *                   including floating-point comparison epsilon and ray bias for
+ *                   preventing self-intersection artifacts.
  */
 
 #ifndef COMMON_HPP_

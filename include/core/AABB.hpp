@@ -14,8 +14,8 @@
 
 /// @brief Axis-Aligned Bounding Box.
 struct AABB {
-    Vec3 min{0, 0, 0};
-    Vec3 max{0, 0, 0};
+    Vec3 min{0, 0, 0}; ///< Minimum corner of the bounding box (x, y, z).
+    Vec3 max{0, 0, 0}; ///< Maximum corner of the bounding box (x, y, z).
 
     AABB() = default;
     AABB(const Vec3 &mn, const Vec3 &mx) : min(mn), max(mx) {}

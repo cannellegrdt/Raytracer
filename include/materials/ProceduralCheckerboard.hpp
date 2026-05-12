@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: ProceduralCheckerboard.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Procedural checkerboard material header defining a material that displays alternating colors based on position.
+ * File description: Procedural checkerboard material implementation that displays
+ *                   alternating colors based on position using a 3D checkerboard pattern.
  */
 
 #ifndef PROCEDURALCHECKERBOARD_HPP_
@@ -20,7 +21,8 @@ public:
     /// @param colorA First checkerboard color.
     /// @param colorB Second checkerboard color.
     /// @param scale Size of each checkerboard cell.
-    explicit ProceduralCheckerboard(const Color &colorA, const Color &colorB, double scale) : _colors(colorA, colorB), _scale(scale) {}
+    explicit ProceduralCheckerboard(const Color &colorA, const Color &colorB, double scale)
+        : _colors(colorA, colorB), _scale(scale) {}
 
     /// @brief Computes the color based on checkerboard pattern at the hit point.
     /// @param ray Incoming ray (unused).

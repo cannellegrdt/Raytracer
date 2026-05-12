@@ -2,7 +2,9 @@
  * Project: Raytracer
  * File name: PointLight.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Point light source that illuminates from a specific position with quadratic attenuation.
+ * File description: Point light source implementation that illuminates from
+ *                   a specific position in space with quadratic attenuation
+ *                   based on distance from the light source.
  */
 
 #ifndef POINTLIGHT_HPP_
@@ -17,7 +19,8 @@ public:
     /// @param position Position of the point light in world space.
     /// @param color Color of the light.
     /// @param intensity Intensity multiplier for the light.
-    PointLight(const Vec3 &position, const Color &color, double intensity) : _position(position), _color(color), _intensity(intensity) {};
+    PointLight(const Vec3 &position, const Color &color, double intensity)
+        : _position(position), _color(color), _intensity(intensity) {};
 
     /// @brief Samples the point light at a given point.
     /// @param hitPoint Point in space to sample from.

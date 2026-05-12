@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: Type.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Shared type aliases and helpers for primitive ownership (PrimitivePtr with custom deleter).
+ * File description: Shared type aliases and helpers for primitive ownership including
+ *                   PrimitivePtr with custom deleter for proper polymorphic cleanup.
  */
 
 #ifndef TYPE_HPP_

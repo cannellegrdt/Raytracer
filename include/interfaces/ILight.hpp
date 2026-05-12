@@ -2,7 +2,8 @@
  * Project: Raytracer
  * File name: ILight.hpp
  * Author: Cannelle Gourdet - lankley
- * File description: Interface for light sources; provides a sample (direction, color, distance) at a hit point.
+ * File description: Interface definition for light sources in the ray tracer,
+ *                   providing light sampling capabilities for illumination calculations.
  */
 
 #ifndef ILIGHT_HPP_
