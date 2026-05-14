@@ -362,7 +362,11 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth, int nbAO
         }
     }
 
-    Color result = scattered.attenuation * lightDiffuse + lightSpecular;
+    Color result{0, 0, 0};
+    if (scattered.applyDirectLighting)
+        result = scattered.attenuation * lightDiffuse + lightSpecular;
+    else if (!scattered.scatteredRay)
+        return scattered.attenuation;
     if (depth > 0 && scattered.scatteredRay) {
         Color indirect = traceRay(*scattered.scatteredRay, scene, depth - 1, nbAORays);
         result += scattered.attenuation * indirect;
