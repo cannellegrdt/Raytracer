@@ -13,7 +13,6 @@
 #include <unordered_map>
 #include <cmath>
 #include <limits>
-#include <utility>
 
 /// @brief Mandelbulb fractal primitive implementing ray-fractal intersection via distance estimation and ray marching.
 /// Inherits from IPrimitive to integrate with the raytracer plugin system.
@@ -47,11 +46,10 @@ public:
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
         AABB bbox = boundingBox();
-        auto bboxIntersect = rayAABBIntersect(ray, bbox);
-        if (!bboxIntersect) return std::nullopt;
-
-        double t_start_world = bboxIntersect->first;
-        double t_end_world = bboxIntersect->second;
+        double t_start_world = 0.0;
+        double t_end_world = std::numeric_limits<double>::infinity();
+        if (!bbox.intersect(ray, t_start_world, t_end_world))
+            return std::nullopt;
 
         Vec3 ro = (ray.origin - _center) / _scale;
         Vec3 rd = normalize(ray.direction / _scale);
@@ -79,45 +77,6 @@ public:
     }
 
 private:
-    /// @brief Computes ray-AABB intersection in world space.
-    /// @param ray The ray.
-    /// @param bbox The AABB.
-    /// @return Optional pair of (t_near, t_far) if intersects, else nullopt.
-    std::optional<std::pair<double, double>> rayAABBIntersect(const Ray& ray, const AABB& bbox) const {
-        double tmin = -std::numeric_limits<double>::infinity();
-        double tmax = std::numeric_limits<double>::infinity();
-        if (std::abs(ray.direction.x) < 1e-8) {
-            if (ray.origin.x < bbox.min.x || ray.origin.x > bbox.max.x) return std::nullopt;
-        } else {
-            double t1 = (bbox.min.x - ray.origin.x) / ray.direction.x;
-            double t2 = (bbox.max.x - ray.origin.x) / ray.direction.x;
-            tmin = std::max(tmin, std::min(t1, t2));
-            tmax = std::min(tmax, std::max(t1, t2));
-        }
-
-        if (std::abs(ray.direction.y) < 1e-8) {
-            if (ray.origin.y < bbox.min.y || ray.origin.y > bbox.max.y) return std::nullopt;
-        } else {
-            double t1 = (bbox.min.y - ray.origin.y) / ray.direction.y;
-            double t2 = (bbox.max.y - ray.origin.y) / ray.direction.y;
-            tmin = std::max(tmin, std::min(t1, t2));
-            tmax = std::min(tmax, std::max(t1, t2));
-        }
-
-        if (std::abs(ray.direction.z) < 1e-8) {
-            if (ray.origin.z < bbox.min.z || ray.origin.z > bbox.max.z) return std::nullopt;
-        } else {
-            double t1 = (bbox.min.z - ray.origin.z) / ray.direction.z;
-            double t2 = (bbox.max.z - ray.origin.z) / ray.direction.z;
-            tmin = std::max(tmin, std::min(t1, t2));
-            tmax = std::min(tmax, std::max(t1, t2));
-        }
-
-        if (tmin <= tmax)
-            return std::make_pair(tmin, tmax);
-        return std::nullopt;
-    }
-
     /// @brief Estimates the distance from a point to the Mandelbulb surface using fractal iteration.
     /// @param v The point to estimate distance from.
     /// @return The estimated distance to the surface.
