@@ -5,6 +5,7 @@
  * File description: Axis-aligned cube primitive plugin implementing ray-cube intersection via slab method.
  */
 
+#include <limits>
 #include "IPrimitive.hpp"
 #include "IMaterial.hpp"
 #include "Vec3.hpp"
@@ -41,46 +42,12 @@ public:
     /// @param ray The ray to test for intersection.
     /// @return Optional HitRecord with intersection details, or std::nullopt if no hit.
     std::optional<HitRecord> intersect(const Ray &ray) const override {
-        double tXMin, tXMax;
-        if (ray.direction.x >= 0) {
-            tXMin = (_min.x - ray.origin.x) / ray.direction.x;
-            tXMax = (_max.x - ray.origin.x) / ray.direction.x;
-        } else {
-            tXMin = (_max.x - ray.origin.x) / ray.direction.x;
-            tXMax = (_min.x - ray.origin.x) / ray.direction.x;
-        }
-
-        double tYMin, tYMax;
-        if (ray.direction.y >= 0) {
-            tYMin = (_min.y - ray.origin.y) / ray.direction.y;
-            tYMax = (_max.y - ray.origin.y) / ray.direction.y;
-        } else {
-            tYMin = (_max.y - ray.origin.y) / ray.direction.y;
-            tYMax = (_min.y - ray.origin.y) / ray.direction.y;
-        }
-
-        if (tXMin > tYMax || tYMin > tXMax)
+        double tMin = 0.0;
+        double tMax = std::numeric_limits<double>::infinity();
+        if (!AABB(_min, _max).intersect(ray, tMin, tMax))
             return std::nullopt;
-        if (tYMin > tXMin) tXMin = tYMin;
-        if (tYMax < tXMax) tXMax = tYMax;
 
-        double tZMin, tZMax;
-        if (ray.direction.z >= 0) {
-            tZMin = (_min.z - ray.origin.z) / ray.direction.z;
-            tZMax = (_max.z - ray.origin.z) / ray.direction.z;
-        } else {
-            tZMin = (_max.z - ray.origin.z) / ray.direction.z;
-            tZMax = (_min.z - ray.origin.z) / ray.direction.z;
-        }
-
-        if (tXMin > tZMax || tZMin > tXMax)
-            return std::nullopt;
-        if (tZMin > tXMin) tXMin = tZMin;
-        if (tZMax < tXMax) tXMax = tZMax;
-
-        double t = tXMin;
-        if (t < epsilon)
-            t = tXMax;
+        double t = (tMin > epsilon) ? tMin : tMax;
         if (t < epsilon)
             return std::nullopt;
 
