@@ -309,54 +309,56 @@ Color Renderer::traceRay(const Ray &ray, const Scene &scene, int depth, int nbAO
 
     Color lightDiffuse{0, 0, 0};
     Color lightSpecular{0, 0, 0};
-    for (const auto &light : scene.lights()) {
-        LightSample sample = light->getSample(hit->point, hit->normal);
+    if (scattered.applyDirectLighting) {
+        for (const auto &light : scene.lights()) {
+            LightSample sample = light->getSample(hit->point, hit->normal);
 
-        if (sample.isAmbient) {
-            int unoccluded = 0;
+            if (sample.isAmbient) {
+                int unoccluded = 0;
 
-            for (int i=0; i<nbAORays; i++) {
-                Vec3 AODir = randomInHemisphere(hit->normal);
-                Ray AORay{hit->point + RayBias * hit->normal, AODir};
-                auto AOHit = closestHit(AORay, scene);
-                if (!AOHit || AOHit->t > sample.maxDistance)
-                    unoccluded++;
+                for (int i=0; i<nbAORays; i++) {
+                    Vec3 AODir = randomInHemisphere(hit->normal);
+                    Ray AORay{hit->point + RayBias * hit->normal, AODir};
+                    auto AOHit = closestHit(AORay, scene);
+                    if (!AOHit || AOHit->t > sample.maxDistance)
+                        unoccluded++;
+                }
+
+                double AOFactor = static_cast<double>(unoccluded) / nbAORays;
+                lightDiffuse += sample.color * AOFactor;
+                continue;
             }
 
-            double AOFactor = static_cast<double>(unoccluded) / nbAORays;
-            lightDiffuse += sample.color * AOFactor;
-            continue;
-        }
-
-        Color shadowFilter{1.0, 1.0, 1.0};
-        {
-            Ray sRay{hit->point + RayBias * hit->normal, sample.direction};
-            double remaining = sample.distance;
-            bool fullyBlocked = false;
-            for (int si = 0; si < 8; si++) {
-                auto blocker = closestHit(sRay, scene);
-                if (!blocker || blocker->t >= remaining) break;
-                if (!blocker->material) { fullyBlocked = true; break; }
-                if (!blocker->material->isTransmissive()) { fullyBlocked = true; break; }
-                ScatterResult s = blocker->material->scatter(sRay, *blocker);
-                shadowFilter = shadowFilter * s.attenuation;
-                if (!s.scatteredRay) { fullyBlocked = true; break; }
-                remaining -= blocker->t;
-                sRay = *s.scatteredRay;
+            Color shadowFilter{1.0, 1.0, 1.0};
+            {
+                Ray sRay{hit->point + RayBias * hit->normal, sample.direction};
+                double remaining = sample.distance;
+                bool fullyBlocked = false;
+                for (int si = 0; si < 8; si++) {
+                    auto blocker = closestHit(sRay, scene);
+                    if (!blocker || blocker->t >= remaining) break;
+                    if (!blocker->material) { fullyBlocked = true; break; }
+                    if (!blocker->material->isTransmissive()) { fullyBlocked = true; break; }
+                    ScatterResult s = blocker->material->scatter(sRay, *blocker);
+                    shadowFilter = shadowFilter * s.attenuation;
+                    if (!s.scatteredRay) { fullyBlocked = true; break; }
+                    remaining -= blocker->t;
+                    sRay = *s.scatteredRay;
+                }
+                if (fullyBlocked) continue;
             }
-            if (fullyBlocked) continue;
-        }
 
-        double diffuse = std::max(0.0, dot(effectiveNormal, sample.direction));
-        lightDiffuse += sample.color * diffuse * shadowFilter;
+            double diffuse = std::max(0.0, dot(effectiveNormal, sample.direction));
+            lightDiffuse += sample.color * diffuse * shadowFilter;
 
-        auto specularParams = hit->material->getSpecular();
-        if (specularParams) {
-            Vec3 refl = reflect(-sample.direction, effectiveNormal);
-            Vec3 normalDir = normalize(-ray.direction);
-            double specAngle = std::max(0.0, dot(refl, normalDir));
-            double specular = std::pow(specAngle, specularParams->shininess);
-            lightSpecular += specularParams->ks * sample.color * specular * shadowFilter;
+            auto specularParams = hit->material->getSpecular();
+            if (specularParams) {
+                Vec3 refl = reflect(-sample.direction, effectiveNormal);
+                Vec3 normalDir = normalize(-ray.direction);
+                double specAngle = std::max(0.0, dot(refl, normalDir));
+                double specular = std::pow(specAngle, specularParams->shininess);
+                lightSpecular += specularParams->ks * sample.color * specular * shadowFilter;
+            }
         }
     }
 

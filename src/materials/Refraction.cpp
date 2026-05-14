@@ -13,7 +13,7 @@
 static ScatterResult reflection(Vec3 &dir, const HitRecord &hit, Color _color) {
     Vec3 reflected = normalize(dir - 2 * dot(dir, hit.normal) * hit.normal);
     Vec3 origin = hit.point + RayBias * hit.normal;
-    return ScatterResult{_color, Ray{origin, reflected}, std::nullopt};
+    return ScatterResult{_color, Ray{origin, reflected}, std::nullopt, false};
 }
 
 ScatterResult Refraction::scatter(const Ray &ray, const HitRecord &hit) const {
@@ -41,5 +41,5 @@ ScatterResult Refraction::scatter(const Ray &ray, const HitRecord &hit) const {
         return reflection(dir, hit, _color);
 
     Vec3 origin = hit.point - RayBias * hit.normal;
-    return ScatterResult{_color, Ray{origin, refractedDir}, std::nullopt};
+    return ScatterResult{_color, Ray{origin, refractedDir}, std::nullopt, false};
 }

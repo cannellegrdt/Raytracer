@@ -18,6 +18,7 @@ struct ScatterResult {
     Vec3 attenuation;                   ///< Color attenuation (how much light is reflected/transmitted).
     std::optional<Ray> scatteredRay;    ///< New ray after scattering (empty if absorbed).
     std::optional<Vec3> modifiedNormal; ///< Optional modified normal (e.g., from normal mapping) for lighting calculations.
+    bool applyDirectLighting = true;    ///< If false, direct lighting (diffuse + specular) is skipped. Set to false for pure secondary-ray materials (reflection, transparency, refraction).
 };
 
 #endif /* SCATTERRESULT_HPP_ */
