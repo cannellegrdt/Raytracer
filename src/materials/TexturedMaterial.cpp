@@ -77,7 +77,7 @@ void TexturedMaterial::loadPPM(const std::string &filePath) {
     file >> maxVal;
     file.get();
 
-    _pixels.resize(_width * _height);
+    _pixels.resize(static_cast<size_t>(_width) * _height);
     if (magic == "P3") {
         for (size_t i=0; i<_pixels.size(); i++) {
             int r, g, b;

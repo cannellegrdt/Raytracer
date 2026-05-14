@@ -85,7 +85,7 @@ void NormalMapMaterial::loadPPM(const std::string &filePath) {
     file >> maxVal;
     file.get();
 
-    long long size = _width * _height;
+    long long size = static_cast<long long>(_width) * _height;
 
     _pixels.resize(size);
 
