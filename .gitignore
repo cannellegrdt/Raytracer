@@ -47,6 +47,7 @@
 
 # my files
 *.pdf
+!raytracer.pdf
 *.txt
 *.gcda
 *.gcno
