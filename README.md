@@ -65,7 +65,7 @@ All compiled plugins must be placed in the `./plugins/` directory.
 </p>
 <p align="center">
     <img src="screenshots/bubbles.png" style="height: 500px; max-width: 100%; object-fit: contain;">
-    <img src="screenshots/rings.png" style="height: 500; max-width: 100%; object-fit: contain;">
+    <img src="screenshots/rings.png" style="height: 500px; max-width: 100%; object-fit: contain;">
 </p>
 
 ---
